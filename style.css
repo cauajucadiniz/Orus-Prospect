@@ -1,1 +1,52 @@
-(estilos globais)
+/* ORUS Prospectador - Global Styles */
+/* Os estilos principais estao inline em cada arquivo HTML */
+/* Este arquivo existe para futuras customizacoes globais */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C97A;
+  --gold-dark: #9A7A30;
+  --black: #0A0A0A;
+  --dark: #111111;
+  --card: #181818;
+  --card2: #1F1F1F;
+  --border: #2A2A2A;
+  --border-gold: rgba(201, 168, 76, 0.3);
+  --text: #F0EDE8;
+  --text-muted: #8A8580;
+  --green: #2ECC71;
+  --red: #E74C3C;
+  --blue: #3498DB;
+  --orange: #E67E22;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--black);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: 'DM Sans', sans-serif;
+}
+
+input, select, textarea {
+  font-family: 'DM Sans', sans-serif;
+}
