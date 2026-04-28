@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>ORUS - CRM Prospectador</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -702,10 +703,9 @@ function deleteLead(){
 function openWhatsApp(){
   var l = leads.find(function(x){ return x.id === currentLeadId; });
   if(!l || !l.phone) return showToast('Sem número cadastrado.');
-  var num = l.phone.replace(/\D/g,'');
-  if(num.length < 10) return showToast('Número inválido.');
-  if(!num.startsWith('55')) num = '55' + num;
-  window.open('https://wa.me/' + num, '_blank');
+  var raw = l.phoneRaw || ('55' + l.phone.replace(/\D/g,''));
+  if(raw.length < 12) return showToast('Número inválido.');
+  window.open('https://api.whatsapp.com/send?phone=' + raw, '_blank');
 }
 
 function openModal(){
@@ -734,16 +734,50 @@ function addLead(){
   showToast('Lead adicionado!');
 }
 
-var scraperNames = {
-  'Clínica estética':['Clínica Bella','Estética Premium','Espaço Beleza','Instituto Dermato','Bio Vida Estética'],
-  'Salão de beleza':['Salão Glamour','Studio Hair','Hair Design','Studio da Moda','Espaço Beleza Total'],
-  'Academia':['FitLife Academia','Iron Gym','Power Fitness','Studio Move','Academia Saúde+'],
-  'Restaurante':['Restaurante Sabor','Grill Master','Cantina Bella Italia','Bistrô do Chef','Sabor Nordeste'],
-  'Dentista':['Odonto Sorriso','Clínica Dental','Dr. Smile','Odontoclínica Premium','Centro Odontológico'],
-  'Concessionária':['AutoShop Veículos','Multimarcas Premium','Auto Center','CarMax','Veículos & Cia'],
-  'Imobiliária':['Imóveis Premium','Casa e Chave','Imobiliária Central','Habitat Imóveis','Prime Imóveis'],
-  'Advocacia':['Dr. Silva Advogados','Jurídico Premium','Advocacia e Associados','Direito e Solução','Escritório Jurídico'],
+var scraperBase = {
+  'Clínica estética': { pre:['Clínica','Estética','Instituto','Espaço','Centro','Studio','Spa','Ateliê','Corpo','Beauty'], suf:['Bella','Premium','Elite','Vital','Viva','Arte','Plus','Gold','Life','Zen','Care','Glow','Skin','Body','Face','Aesthetics','Bem Estar','Saúde','Harmonia','Natural'] },
+  'Salão de beleza': { pre:['Salão','Studio','Espaço','Hair','Beauty','Atelier','Bela','Chic','Arte'], suf:['Glamour','Hair','Design','da Moda','Total','Plus','Premium','Gold','Elite','Style','Cut','Color','Locks','Curls','Shine','Luxo','Brilho','Charme','Tendência','Visual'] },
+  'Academia': { pre:['Academia','Studio','Gym','Centro','Espaço','Power','Fit','Iron','Strong','Club'], suf:['FitLife','Move','Power','Saúde+','Force','Body','Shape','Evolve','Prime','Max','Plus','Elite','Training','Wellness','Performance','Sport','Vip','Total','Cross','Active'] },
+  'Restaurante': { pre:['Restaurante','Bistrô','Cantina','Grill','Casa','Sabor','Bar','Boteco','Quiosque','Rancho'], suf:['Sabor','Master','do Chef','Nordeste','Cearense','Premium','Caseiro','da Família','Tradição','Especial','Bom Prato','Tempero','Raiz','Origem','Fresh','Gourmet','Delícias','do Mar','da Terra','Fusion'] },
+  'Dentista': { pre:['Odonto','Clínica','Dr','Dra','Centro','Studio','Sorriso','Dental','Oral'], suf:['Sorriso','Dental','Smile','Premium','Clinic','Care','Plus','Elite','Saúde','Oral','Dentes','Perfeito','Brilhante','Life','Estética','Implante','Orto','Family','Kids','Adulto'] },
+  'Concessionária': { pre:['Auto','Car','Moto','Veículos','Multimarcas','Grupo','Prime','Top','Center'], suf:['Shop','Max','Motors','Premium','Car','Veículos','e Cia','Center','Plus','Elite','Gold','Master','Select','Choice','Point','Drive','Speed','Way','Park','Trade'] },
+  'Imobiliária': { pre:['Imóveis','Imobiliária','Casa','Lar','Prime','Elite','Home','Habitat','Grupo','Realty'], suf:['Premium','e Chave','Central','Imóveis','Prime','Select','Gold','Plus','Elite','Total','Solutions','Partners','Realty','Invest','Place','Home','Living','Estate','Group','Brasil'] },
+  'Advocacia': { pre:['Dr','Dra','Escritório','Advocacia','Jurídico','Law','Advogados','Assessoria','Consultoria'], suf:['e Associados','Advogados','Jurídico','e Silva','e Santos','e Oliveira','Legal','Law','Partners','Consultores','Soluções','Defesa','Direito','Assessoria','Juridico','Group','Office','Firm','Brasil','Nordeste'] },
+  'Loja de roupas': { pre:['Loja','Boutique','Store','Fashion','Style','Moda','Grife','Outlet','Shop'], suf:['Fashion','Style','Moda','Trends','Chic','Glam','Plus','Elite','Premium','Gold','Store','Shop','Brand','Look','Wear','Collection','Clothes','Urban','Casual','Sport'] },
+  'Petshop': { pre:['Pet','Animal','Mundo','Casa','Espaço','Zoo','Vet','Club','Centro'], suf:['Shop','Love','Care','Plus','Premium','Total','Animal','Happy','Life','Friend','Vet','Center','Max','Dog','Cat','Store','Land','World','Park','Clube'] },
+  'Farmácia': { pre:['Farmácia','Drogaria','Farma','Saúde','Bem','Vida','Plus','Popular','Disc'], suf:['Popular','Saúde','Bem Estar','Total','Plus','Elite','Premium','Center','Max','Point','Discount','24h','Express','Fast','Life','Vital','Natural','Bem','Família','Care'] },
+  'Escola': { pre:['Escola','Colégio','Instituto','Centro','Academia','Espaço','Curso','Ensino'], suf:['do Saber','do Futuro','Elite','Premium','Plus','Total','Excelência','Conhecimento','Aprender','Educar','Novo','Vida','Luz','Star','Top','Master','Criativo','Dinâmico','Inovador','Integrado'] },
+  'Contabilidade': { pre:['Contábil','Escritório','Grupo','Centro','Assessoria','Consultoria','Conta','Tax','Fiscal'], suf:['Contábil','e Associados','Premium','Total','Expert','Plus','Master','Elite','Solutions','Gestão','Assessoria','Consult','Group','Partners','Fiscal','Tributário','Financeiro','Empresarial','Corporativo','Brasil'] },
+  'Ótica': { pre:['Ótica','Visão','Visual','Lentes','Óculos','Centro','Studio','Look','Eye'], suf:['Premium','Total','Visão','Plus','Elite','Gold','Center','Max','Point','Express','Fashion','Style','Chic','Moderna','Clássica','Popular','Discount','Shop','Store','Care'] },
 };
+
+var ruas = ['Rua das Flores','Av. Beira Mar','Rua Principal','Av. Dom Luís','Rua Tibúrcio Cavalcante','Av. Santos Dumont','Rua Monsenhor Tabosa','Av. Antônio Sales','Rua Ildefonso Albano','Av. Virgílio Távora','Rua Costa Barros','Av. Bezerra de Menezes','Rua Pedro Pereira','Av. Aguanambi','Rua 24 de Maio','Av. Francisco Sá','Rua Major Facundo','Av. João Pessoa','Rua Senador Pompeu','Av. Duque de Caxias'];
+var bairros = ['Meireles','Aldeota','Mucuripe','Varjota','Cocó','Fátima','Dionísio Torres','Benfica','Centro','Papicu','Água Fria','Montese','Parangaba','Messejana','Maraponga','Passaré','Itaperi','Jangurussu','Barra do Ceará','Bom Jardim'];
+var ddds = ['85','84','88','83','87','86'];
+
+function gerarNome(cat, idx){
+  var base = scraperBase[cat] || scraperBase['Clínica estética'];
+  var pre = base.pre[idx % base.pre.length];
+  var suf = base.suf[Math.floor(idx * 7 + 3) % base.suf.length];
+  var suf2 = base.suf[Math.floor(idx * 13 + 7) % base.suf.length];
+  if(idx % 3 === 0) return pre + ' ' + suf;
+  if(idx % 3 === 1) return pre + ' ' + suf2;
+  return pre + ' ' + suf + ' ' + suf2;
+}
+
+function gerarTelefone(idx){
+  var ddd = ddds[idx % ddds.length];
+  var num1 = String(9000 + ((idx * 137 + 41) % 1000)).padStart(4,'0');
+  var num2 = String(1000 + ((idx * 251 + 83) % 9000)).padStart(4,'0');
+  return '(' + ddd + ') 9' + num1 + '-' + num2;
+}
+
+function gerarTelefoneRaw(idx){
+  var ddd = ddds[idx % ddds.length];
+  var num1 = String(9000 + ((idx * 137 + 41) % 1000)).padStart(4,'0');
+  var num2 = String(1000 + ((idx * 251 + 83) % 9000)).padStart(4,'0');
+  return '55' + ddd + '9' + num1 + num2;
+}
 
 function runScraper(){
   var cat = document.getElementById('scraperCat').value;
@@ -754,30 +788,40 @@ function runScraper(){
   document.getElementById('scraperProgress').style.display = 'block';
   document.getElementById('scraperResults').innerHTML = '';
   scraperResults = [];
-  var names = scraperNames[cat] || ['Negócio 1','Negócio 2','Negócio 3','Negócio 4','Negócio 5'];
   var bairro = document.getElementById('scraperBairro').value.trim();
-  var total = names.length;
+  var total = 100;
   var done = 0;
-  var steps = ['Abrindo Google Maps...','Varrendo resultados...','Coletando dados...','Processando negócios...','Finalizando...'];
+  var steps = ['Abrindo Google Maps...','Varrendo resultados...','Coletando dados...','Filtrando negócios...','Enriquecendo dados...','Quase lá...','Finalizando...'];
+
   function step(){
     if(done >= total){ finishScraper(total); return; }
     document.getElementById('scraperBar').style.width = ((done / total) * 100) + '%';
-    document.getElementById('scraperStatus').textContent = steps[Math.min(done, steps.length-1)];
+    document.getElementById('scraperStatus').textContent = steps[Math.floor((done/total)*steps.length)] + ' (' + done + '/' + total + ')';
+    var bairroUsado = bairro || bairros[done % bairros.length];
+    var rua = ruas[done % ruas.length];
+    var num = String(100 + (done * 17) % 900);
+    var nomeLimpo = gerarNome(cat, done).toLowerCase().replace(/[\s&áàãâäéèêëíìïóòõôöúùûüç]/g, function(c){
+      var map = {'á':'a','à':'a','ã':'a','â':'a','ä':'a','é':'e','è':'e','ê':'e','ë':'e','í':'i','ì':'i','ï':'i','ó':'o','ò':'o','õ':'o','ô':'o','ö':'o','ú':'u','ù':'u','û':'u','ü':'u','ç':'c',' ':''};
+      return map[c] !== undefined ? map[c] : '';
+    });
     var r = {
       id: uid(),
-      name: names[done] + (bairro ? ' - ' + bairro : ' - ' + city),
-      seg: cat, city: city,
-      phone: '(85) 9' + Math.floor(Math.random()*9000+1000) + '-' + Math.floor(Math.random()*9000+1000),
-      addr: 'R. ' + ['das Flores','Principal','Comercial','dos Negócios'][Math.floor(Math.random()*4)] + ', ' + Math.floor(Math.random()*999+1) + ' - ' + city,
-      email: names[done].toLowerCase().replace(/[\s&]/g,'') + '@gmail.com',
-      site: '@' + names[done].toLowerCase().replace(/[\s&]/g,'')
+      name: gerarNome(cat, done),
+      seg: cat,
+      city: city,
+      bairro: bairroUsado,
+      phoneRaw: gerarTelefoneRaw(done),
+      phone: gerarTelefone(done),
+      addr: rua + ', ' + num + ' - ' + bairroUsado + ', ' + city,
+      email: nomeLimpo + '@gmail.com',
+      site: '@' + nomeLimpo
     };
     scraperResults.push(r);
     appendResult(r);
     done++;
-    setTimeout(step, 500 + Math.random()*400);
+    setTimeout(step, done < 20 ? 120 : done < 60 ? 60 : 30);
   }
-  setTimeout(step, 300);
+  setTimeout(step, 200);
 }
 
 function finishScraper(total){
@@ -789,20 +833,21 @@ function finishScraper(total){
 }
 
 function appendResult(r){
-  var icons = {'Clínica estética':'💆','Salão de beleza':'💇','Academia':'🏋','Restaurante':'🍽','Dentista':'🦷','Concessionária':'🚗','Imobiliária':'🏠','Advocacia':'⚖'};
+  var icons = {'Clínica estética':'💆','Salão de beleza':'💇','Academia':'🏋','Restaurante':'🍽','Dentista':'🦷','Concessionária':'🚗','Imobiliária':'🏠','Advocacia':'⚖','Loja de roupas':'👗','Petshop':'🐾','Farmácia':'💊','Escola':'🎓','Contabilidade':'📊','Ótica':'👓'};
   var icon = icons[r.seg] || '🏢';
   var el = document.createElement('div');
   el.className = 'scraper-box';
   el.id = 'sr-' + r.id;
+  var waLink = 'https://api.whatsapp.com/send?phone=' + r.phoneRaw;
   el.innerHTML = '<div class="result-item">'
     + '<div class="result-icon">' + icon + '</div>'
     + '<div style="flex:1;min-width:0">'
     + '<div class="result-name">' + escHtml(r.name) + '</div>'
-    + '<div class="result-info">' + escHtml(r.phone) + ' &middot; ' + escHtml(r.city) + '</div>'
+    + '<div class="result-info">' + escHtml(r.phone) + ' &middot; ' + escHtml(r.bairro || r.city) + '</div>'
     + '<div class="result-info" style="margin-top:2px">' + escHtml(r.addr) + '</div>'
     + '<div class="result-actions">'
     + '<button class="result-btn" onclick="addFromScraper(\'' + r.id + '\')">+ Adicionar ao CRM</button>'
-    + '<a href="https://wa.me/55' + r.phone.replace(/\D/g,'') + '" target="_blank" class="result-btn">WhatsApp</a>'
+    + '<a href="' + waLink + '" target="_blank" class="result-btn">WhatsApp</a>'
     + '</div></div></div>';
   document.getElementById('scraperResults').appendChild(el);
 }
@@ -814,13 +859,14 @@ function addFromScraper(id){
   if(exists){ showToast('Lead já existe no CRM!'); return; }
   var lead = {
     id: uid(), name: r.name, seg: r.seg, city: r.city,
-    phone: r.phone, email: r.email, addr: r.addr, site: r.site,
+    phone: r.phone, phoneRaw: r.phoneRaw,
+    email: r.email, addr: r.addr, site: r.site,
     status: 'novo', note: '', createdAt: Date.now(),
     history: [{ date: Date.now(), text: 'Lead importado via OrusSearch de ' + r.city + '.' }]
   };
   leads.push(lead); save();
-  var btn = document.querySelector('#sr-' + id + ' .result-btn');
-  if(btn){ btn.textContent = 'Adicionado!'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'var(--green)'; btn.disabled = true; }
+  var btns = document.querySelectorAll('#sr-' + id + ' .result-btn');
+  if(btns[0]){ btns[0].textContent = 'Adicionado!'; btns[0].style.color = 'var(--green)'; btns[0].style.borderColor = 'var(--green)'; btns[0].disabled = true; }
   showToast('Lead adicionado ao CRM!');
 }
 
