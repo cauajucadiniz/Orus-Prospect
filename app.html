@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>ORUS - CRM Prospectador</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -249,6 +248,12 @@ select.inp option{background:var(--dark)}
 }
 .search-inp:focus{border-color:var(--gold-dark)}
 .search-inp::placeholder{color:var(--text-muted)}
+.alert{
+  background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);
+  color:#E74C3C;padding:12px;border-radius:var(--r-sm);margin-bottom:14px;
+  font-size:13px;line-height:1.6;
+}
+.alert a{color:var(--gold);text-decoration:underline}
 </style>
 </head>
 <body>
@@ -321,9 +326,15 @@ select.inp option{background:var(--dark)}
 <!-- SCRAPER -->
 <div class="page" id="page-scraper">
   <div class="section-title">OrusSearch</div>
+  
+  <div id="apifyAlert" class="alert" style="display:none">
+    Configure sua API Key da Apify em <strong>localStorage.setItem('apifyKey', 'SUA_KEY')</strong> no console do navegador. 
+    <a href="https://console.apify.com/account/integrations" target="_blank">Obter chave gratuita aqui</a>
+  </div>
+
   <div class="card card-gold" style="margin-bottom:16px">
     <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">
-      Busca negócios no Google Maps por segmento e cidade. Adicione os leads direto ao CRM com um toque.
+      Busca negócios reais no Google Maps usando a Apify. Custo aproximado: <strong style="color:var(--gold)">$0.20 por 50 leads</strong>.
     </div>
     <div class="input-group">
       <label class="input-label">Segmento</label>
@@ -334,8 +345,8 @@ select.inp option{background:var(--dark)}
         <option>Restaurante</option><option>Concessionária</option>
         <option>Imobiliária</option><option>Advocacia</option>
         <option>Loja de roupas</option><option>Petshop</option>
-        <option>Farmácia</option><option>Escola</option>
-        <option>Contabilidade</option><option>Ótica</option>
+        <option>Farmácia</option><option>Ótica</option>
+        <option>Escola</option><option>Contabilidade</option>
       </select>
     </div>
     <div class="input-group">
@@ -346,14 +357,24 @@ select.inp option{background:var(--dark)}
       <label class="input-label">Bairro (opcional)</label>
       <input class="inp" id="scraperBairro" placeholder="Ex: Aldeota">
     </div>
+    <div class="input-group">
+      <label class="input-label">Quantidade</label>
+      <select class="inp" id="scraperLimit">
+        <option value="5" selected>5 resultados</option>
+        <option value="10">10 resultados</option>
+        <option value="15">15 resultados</option>
+      </select>
+    </div>
     <button class="btn btn-gold" id="scraperBtn" onclick="runScraper()">
       <span id="scraperBtnText">Buscar Leads</span>
     </button>
   </div>
+
   <div id="scraperProgress" style="display:none">
     <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px" id="scraperStatus">Buscando...</div>
     <div class="progress-bar"><div class="progress-fill" id="scraperBar"></div></div>
   </div>
+
   <div id="scraperResults"></div>
 </div>
 
@@ -485,9 +506,9 @@ select.inp option{background:var(--dark)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const SUPA_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 var currentUser = null;
 var leads = [];
@@ -495,407 +516,468 @@ var currentFilter = 'todos';
 var currentLeadId = null;
 var scraperResults = [];
 
-sb.auth.getSession().then(function({ data }){
-  if(!data.session){
-    window.location.href = 'index.html';
-  } else {
-    currentUser = data.session.user;
-    var email = currentUser.email || '';
-    var initials = email.substring(0,2).toUpperCase();
-    document.getElementById('userBadge').textContent = initials;
-    var name = email.split('@')[0];
-    document.getElementById('welcomeName').textContent = name.charAt(0).toUpperCase() + name.slice(1);
-    document.getElementById('authGuard').style.display = 'none';
-    loadLeads();
+// AUTH
+sb.auth.getSession().then(async function({ data }){
+  if(!data.session){ window.location.href = 'index.html'; return; }
+  currentUser = data.session.user;
+  var email = currentUser.email || '';
+  document.getElementById('userBadge').textContent = email.substring(0,2).toUpperCase();
+  var name = email.split('@')[0];
+  document.getElementById('welcomeName').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+  document.getElementById('authGuard').style.display = 'none';
+  await loadLeads();
+  checkApifyKey();
+});
+
+sb.auth.onAuthStateChange(function(event){ if(event === 'SIGNED_OUT') window.location.href = 'index.html'; });
+
+async function doLogout(){ await sb.auth.signOut(); }
+
+function checkApifyKey(){
+  var key = localStorage.getItem('apifyKey');
+  if(!key) document.getElementById('apifyAlert').style.display = 'block';
+}
+
+// SUPABASE
+async function loadLeads(){
+  var {data,error} = await sb.from('leads').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false});
+  if(!error && data){
+    leads = data.map(function(l){
+      return {
+        id:l.id,name:l.name,seg:l.seg,city:l.city,bairro:l.bairro,
+        phone:l.phone,phoneRaw:l.phone_raw,email:l.email,
+        addr:l.addr,site:l.site,status:l.status,note:l.note,
+        history:l.history||[],createdAt:l.created_at
+      };
+    });
   }
-});
-
-sb.auth.onAuthStateChange(function(event, session){
-  if(event === 'SIGNED_OUT') window.location.href = 'index.html';
-});
-
-async function doLogout(){
-  await sb.auth.signOut();
+  renderDashboard();renderLeads();renderRelatorio();
 }
 
-function getStorageKey(){
-  return 'orus_leads_' + (currentUser ? currentUser.id : 'local');
+async function saveLead(lead){
+  var row = {
+    user_id:currentUser.id,name:lead.name,seg:lead.seg,city:lead.city,
+    bairro:lead.bairro,phone:lead.phone,phone_raw:lead.phoneRaw,
+    email:lead.email,addr:lead.addr,site:lead.site,
+    status:lead.status,note:lead.note,history:lead.history
+  };
+  if(lead.id && lead.id.length>20){
+    await sb.from('leads').update(row).eq('id',lead.id);
+  }else{
+    var {data} = await sb.from('leads').insert(row).select().single();
+    if(data) lead.id = data.id;
+  }
 }
-function loadLeads(){
-  var stored = localStorage.getItem(getStorageKey());
-  leads = stored ? JSON.parse(stored) : [];
-  renderDashboard();
-  renderLeads();
-}
-function save(){ localStorage.setItem(getStorageKey(), JSON.stringify(leads)); }
-function uid(){ return Date.now() + Math.random().toString(36).substr(2,5); }
 
+async function deleteLeadFromDB(id){ await sb.from('leads').delete().eq('id',id); }
+
+// UI
 function showToast(msg){
-  var t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 2000);
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2200);
 }
 
-function showPage(id, btn){
-  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('page-' + id).classList.add('active');
-  btn.classList.add('active');
-  var fab = document.getElementById('fab');
-  fab.style.display = (id === 'leads') ? 'flex' : 'none';
-  if(id === 'dashboard') renderDashboard();
-  if(id === 'leads') renderLeads();
-  if(id === 'relatorio') renderRelatorio();
-}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function uid(){ return Date.now()+Math.random().toString(36).substr(2,6); }
 
-function getStatusClass(s){
-  return {novo:'s-novo',abordado:'s-abordado',agendado:'s-agendado',fechado:'s-fechado','sem-resposta':'s-sem-resposta'}[s]||'s-novo';
+function getBadge(s){
+  var map={novo:'s-novo',abordado:'s-abordado',agendado:'s-agendado',fechado:'s-fechado','sem-resposta':'s-sem-resposta'};
+  var label={novo:'Novo',abordado:'Abordado',agendado:'Agendado',fechado:'Fechado','sem-resposta':'Sem Resposta'};
+  return '<span class="status-badge '+(map[s]||'s-novo')+'">'+(label[s]||'Novo')+'</span>';
 }
-function getStatusLabel(s){
+function getLabel(s){
   return {novo:'Novo',abordado:'Abordado',agendado:'Agendado',fechado:'Fechado','sem-resposta':'Sem Resposta'}[s]||'Novo';
 }
 
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  var fab=document.getElementById('fab');
+  fab.style.display=(id==='leads')?'flex':'none';
+  if(id==='dashboard')renderDashboard();
+  if(id==='leads')renderLeads();
+  if(id==='relatorio')renderRelatorio();
+}
+
+// DASHBOARD
 function renderDashboard(){
-  var today = new Date();
-  document.getElementById('todayDate').textContent = today.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
-  document.getElementById('st-total').textContent = leads.length;
-  document.getElementById('st-agendado').textContent = leads.filter(function(l){ return l.status === 'agendado'; }).length;
-  document.getElementById('st-abordado').textContent = leads.filter(function(l){ return l.status === 'abordado'; }).length;
-  document.getElementById('st-fechado').textContent = leads.filter(function(l){ return l.status === 'fechado'; }).length;
-  var todayStr = today.toDateString();
-  var todayLeads = leads.filter(function(l){ return l.createdAt && new Date(l.createdAt).toDateString() === todayStr; });
-  var meta = 10;
-  var pct = Math.min(100, Math.round((todayLeads.length / meta) * 100));
-  document.getElementById('metaText').textContent = todayLeads.length + ' / ' + meta;
-  document.getElementById('metaBar').style.width = pct + '%';
-  document.getElementById('metaLeft').textContent = todayLeads.length >= meta ? 'Meta atingida!' : 'Faltam ' + (meta - todayLeads.length) + ' abordagens';
-  var recent = leads.slice().reverse().slice(0,4);
-  var el = document.getElementById('recentLeads');
-  if(!recent.length){
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Nenhum lead ainda. Comece pelo OrusSearch!</div></div>';
-    return;
-  }
-  el.innerHTML = recent.map(function(l){
-    return '<div class="lead-card" onclick="openDetail(\'' + l.id + '\')">'
-      + '<div class="lead-name">' + escHtml(l.name) + '</div>'
-      + '<div class="lead-seg">' + escHtml(l.seg) + '</div>'
-      + '<div class="lead-meta"><span class="status-badge ' + getStatusClass(l.status) + '">' + getStatusLabel(l.status) + '</span>'
-      + '<span class="lead-phone">' + escHtml(l.phone) + '</span></div></div>';
+  var today=new Date();
+  document.getElementById('todayDate').textContent=today.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('st-total').textContent=leads.length;
+  document.getElementById('st-agendado').textContent=leads.filter(function(l){return l.status==='agendado';}).length;
+  document.getElementById('st-abordado').textContent=leads.filter(function(l){return l.status==='abordado';}).length;
+  document.getElementById('st-fechado').textContent=leads.filter(function(l){return l.status==='fechado';}).length;
+  var todayStr=today.toDateString();
+  var todayLeads=leads.filter(function(l){return l.createdAt&&new Date(l.createdAt).toDateString()===todayStr;});
+  var meta=10;
+  var pct=Math.min(100,Math.round((todayLeads.length/meta)*100));
+  document.getElementById('metaText').textContent=todayLeads.length+' / '+meta;
+  document.getElementById('metaBar').style.width=pct+'%';
+  document.getElementById('metaLeft').textContent=todayLeads.length>=meta?'Meta atingida!':'Faltam '+(meta-todayLeads.length)+' abordagens';
+  var recent=leads.slice().reverse().slice(0,4);
+  var el=document.getElementById('recentLeads');
+  if(!recent.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Nenhum lead ainda. Comece pelo OrusSearch!</div></div>';return;}
+  el.innerHTML=recent.map(function(l){
+    return '<div class="lead-card" onclick="openDetail(\''+l.id+'\')">'
+      +'<div class="lead-name">'+esc(l.name)+'</div>'
+      +'<div class="lead-seg">'+esc(l.seg)+'</div>'
+      +'<div class="lead-meta">'+getBadge(l.status)
+      +'<span class="lead-phone">'+esc(l.phone)+'</span></div></div>';
   }).join('');
 }
 
+// LEADS
 function renderLeads(){
-  var q = (document.getElementById('searchInp') ? document.getElementById('searchInp').value.toLowerCase() : '');
-  var list = leads.filter(function(l){
-    var matchFilter = currentFilter === 'todos' || l.status === currentFilter;
-    var matchSearch = !q || l.name.toLowerCase().includes(q) || l.seg.toLowerCase().includes(q);
-    return matchFilter && matchSearch;
+  var q=(document.getElementById('searchInp')?document.getElementById('searchInp').value.toLowerCase():'');
+  var list=leads.filter(function(l){
+    var matchFilter=currentFilter==='todos'||l.status===currentFilter;
+    var matchSearch=!q||l.name.toLowerCase().includes(q)||l.seg.toLowerCase().includes(q);
+    return matchFilter&&matchSearch;
   });
-  var el = document.getElementById('leadsList');
-  var empty = document.getElementById('leadsEmpty');
-  if(!list.length){ el.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  el.innerHTML = list.slice().reverse().map(function(l){
-    return '<div class="lead-card" onclick="openDetail(\'' + l.id + '\')">'
-      + '<div class="lead-name">' + escHtml(l.name) + '</div>'
-      + '<div class="lead-seg">' + escHtml(l.seg) + (l.city ? ' · ' + escHtml(l.city) : '') + '</div>'
-      + '<div class="lead-meta"><span class="status-badge ' + getStatusClass(l.status) + '">' + getStatusLabel(l.status) + '</span>'
-      + '<span class="lead-phone">' + escHtml(l.phone) + '</span></div></div>';
+  var el=document.getElementById('leadsList');
+  var empty=document.getElementById('leadsEmpty');
+  if(!list.length){el.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  el.innerHTML=list.slice().reverse().map(function(l){
+    return '<div class="lead-card" onclick="openDetail(\''+l.id+'\')">'
+      +'<div class="lead-name">'+esc(l.name)+'</div>'
+      +'<div class="lead-seg">'+esc(l.seg)+(l.city?' · '+esc(l.city):'')+'</div>'
+      +'<div class="lead-meta">'+getBadge(l.status)
+      +'<span class="lead-phone">'+esc(l.phone)+'</span></div></div>';
   }).join('');
 }
 
-function filterLeads(f, btn){
-  currentFilter = f;
-  document.querySelectorAll('.filter-chip').forEach(function(b){ b.classList.remove('active'); });
+function filterLeads(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-chip').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
   renderLeads();
 }
 
-function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
+// DETAIL
 function openDetail(id){
-  currentLeadId = id;
-  var l = leads.find(function(x){ return x.id === id; });
-  if(!l) return;
-  document.getElementById('detailName').textContent = l.name;
-  document.getElementById('detailSeg').textContent = l.seg + (l.city ? ' - ' + l.city : '');
-  document.getElementById('detailPhone').textContent = l.phone || 'Não informado';
-  document.getElementById('detailEmail').textContent = l.email || 'Não informado';
-  document.getElementById('detailAddr').textContent = l.addr || 'Não informado';
-  document.getElementById('detailSite').textContent = l.site || 'Não informado';
-  document.getElementById('detailStatus').value = l.status;
-  document.getElementById('detailNote').value = l.note || '';
+  currentLeadId=id;
+  var l=leads.find(function(x){return x.id===id;});
+  if(!l)return;
+  document.getElementById('detailName').textContent=l.name;
+  document.getElementById('detailSeg').textContent=l.seg+(l.city?' - '+l.city:'');
+  document.getElementById('detailPhone').textContent=l.phone||'Não informado';
+  document.getElementById('detailEmail').textContent=l.email||'Não informado';
+  document.getElementById('detailAddr').textContent=l.addr||'Não informado';
+  document.getElementById('detailSite').textContent=l.site||'Não informado';
+  document.getElementById('detailStatus').value=l.status;
+  document.getElementById('detailNote').value=l.note||'';
   document.getElementById('detailOverlay').classList.add('open');
-  switchTab('info', document.querySelector('.tab'));
+  switchTab('info',document.querySelector('.tab'));
   renderTimeline(l);
-}
-
-function renderTimeline(l){
-  var c = document.getElementById('timelineContainer');
-  if(!l.history || !l.history.length){
-    c.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Nenhuma atividade ainda.</div></div>';
-    return;
-  }
-  c.innerHTML = l.history.slice().reverse().map(function(h){
-    return '<div class="timeline-item"><div class="tl-dot" style="margin-top:6px"></div>'
-      + '<div class="tl-content"><div class="tl-date">' + new Date(h.date).toLocaleString('pt-BR') + '</div>'
-      + '<div class="tl-text">' + escHtml(h.text) + '</div></div></div>';
-  }).join('');
-}
-
-function switchTab(tab, btn){
-  ['info','acao','historico'].forEach(function(t){
-    document.getElementById('tab-' + t).style.display = (t === tab) ? 'block' : 'none';
-  });
-  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
-  if(btn) btn.classList.add('active');
-  else {
-    var idx = ['info','acao','historico'].indexOf(tab);
-    var tabs = document.querySelectorAll('.tab');
-    if(tabs[idx]) tabs[idx].classList.add('active');
-  }
 }
 
 function closeDetail(){
   document.getElementById('detailOverlay').classList.remove('open');
-  currentLeadId = null;
+  currentLeadId=null;
   renderLeads();
   renderDashboard();
 }
 
-function updateStatus(){
-  if(!currentLeadId) return;
-  var l = leads.find(function(x){ return x.id === currentLeadId; });
-  if(!l) return;
-  var newStatus = document.getElementById('detailStatus').value;
-  if(!l.history) l.history = [];
-  l.history.push({ date: Date.now(), text: 'Status alterado para: ' + getStatusLabel(newStatus) });
-  l.status = newStatus;
-  save();
+function switchTab(tab,btn){
+  ['info','acao','historico'].forEach(function(t){
+    document.getElementById('tab-'+t).style.display=(t===tab)?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  else{
+    var idx=['info','acao','historico'].indexOf(tab);
+    var tabs=document.querySelectorAll('.tab');
+    if(tabs[idx])tabs[idx].classList.add('active');
+  }
+}
+
+function renderTimeline(l){
+  var c=document.getElementById('timelineContainer');
+  if(!l.history||!l.history.length){
+    c.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Nenhuma atividade ainda.</div></div>';
+    return;
+  }
+  c.innerHTML=l.history.slice().reverse().map(function(h){
+    return '<div class="timeline-item"><div class="tl-dot" style="margin-top:6px"></div>'
+      +'<div class="tl-content"><div class="tl-date">'+new Date(h.date).toLocaleString('pt-BR')+'</div>'
+      +'<div class="tl-text">'+esc(h.text)+'</div></div></div>';
+  }).join('');
+}
+
+async function updateStatus(){
+  if(!currentLeadId)return;
+  var l=leads.find(function(x){return x.id===currentLeadId;});
+  if(!l)return;
+  var newStatus=document.getElementById('detailStatus').value;
+  if(!l.history)l.history=[];
+  l.history.push({date:Date.now(),text:'Status alterado para: '+getLabel(newStatus)});
+  l.status=newStatus;
+  await saveLead(l);
   showToast('Status atualizado!');
   renderTimeline(l);
 }
 
-function saveNote(){
-  if(!currentLeadId) return;
-  var l = leads.find(function(x){ return x.id === currentLeadId; });
-  if(!l) return;
-  var note = document.getElementById('detailNote').value.trim();
+async function saveNote(){
+  if(!currentLeadId)return;
+  var l=leads.find(function(x){return x.id===currentLeadId;});
+  if(!l)return;
+  var note=document.getElementById('detailNote').value.trim();
   if(note){
-    if(!l.history) l.history = [];
-    l.history.push({ date: Date.now(), text: 'Anotação: ' + note });
+    if(!l.history)l.history=[];
+    l.history.push({date:Date.now(),text:'Anotação: '+note});
   }
-  l.note = note;
-  save();
+  l.note=note;
+  await saveLead(l);
   showToast('Anotação salva!');
   renderTimeline(l);
 }
 
-function deleteLead(){
-  if(!currentLeadId) return;
-  if(!confirm('Remover este lead?')) return;
-  leads = leads.filter(function(x){ return x.id !== currentLeadId; });
-  save();
+async function deleteLead(){
+  if(!currentLeadId)return;
+  if(!confirm('Remover este lead?'))return;
+  await deleteLeadFromDB(currentLeadId);
+  leads=leads.filter(function(x){return x.id!==currentLeadId;});
   closeDetail();
   showToast('Lead removido.');
 }
 
 function openWhatsApp(){
-  var l = leads.find(function(x){ return x.id === currentLeadId; });
-  if(!l || !l.phone) return showToast('Sem número cadastrado.');
-  var raw = l.phoneRaw || ('55' + l.phone.replace(/\D/g,''));
-  if(raw.length < 12) return showToast('Número inválido.');
-  window.open('https://api.whatsapp.com/send?phone=' + raw, '_blank');
+  var l=leads.find(function(x){return x.id===currentLeadId;});
+  if(!l||!l.phone)return showToast('Sem número cadastrado.');
+  var num=l.phoneRaw||('55'+l.phone.replace(/\D/g,''));
+  if(num.length<12)return showToast('Número inválido.');
+  window.open('https://api.whatsapp.com/send?phone='+num,'_blank');
 }
 
-function openModal(){
-  document.getElementById('addModal').classList.add('open');
-  ['addName','addPhone','addEmail','addAddr','addSite'].forEach(function(id){ document.getElementById(id).value = ''; });
-  document.getElementById('addSeg').value = '';
-}
-function closeModal(){ document.getElementById('addModal').classList.remove('open'); }
+// ADD
+function openModal(){document.getElementById('addModal').classList.add('open');}
+function closeModal(){document.getElementById('addModal').classList.remove('open');}
 
-function addLead(){
-  var name = document.getElementById('addName').value.trim();
-  var seg = document.getElementById('addSeg').value;
-  if(!name || !seg){ showToast('Nome e segmento obrigatórios!'); return; }
-  var lead = {
-    id: uid(), name: name, seg: seg,
-    phone: document.getElementById('addPhone').value.trim(),
-    email: document.getElementById('addEmail').value.trim(),
-    addr: document.getElementById('addAddr').value.trim(),
-    site: document.getElementById('addSite').value.trim(),
-    status: 'novo', note: '',
-    createdAt: Date.now(),
-    history: [{ date: Date.now(), text: 'Lead cadastrado manualmente.' }]
+async function addLead(){
+  var name=document.getElementById('addName').value.trim();
+  var seg=document.getElementById('addSeg').value;
+  if(!name||!seg){showToast('Nome e segmento obrigatórios!');return;}
+  var lead={
+    id:uid(),name:name,seg:seg,
+    phone:document.getElementById('addPhone').value.trim(),
+    email:document.getElementById('addEmail').value.trim(),
+    addr:document.getElementById('addAddr').value.trim(),
+    site:document.getElementById('addSite').value.trim(),
+    status:'novo',note:'',
+    createdAt:Date.now(),
+    history:[{date:Date.now(),text:'Lead cadastrado manualmente.'}]
   };
-  leads.push(lead); save();
-  closeModal(); renderLeads(); renderDashboard();
+  leads.push(lead);
+  await saveLead(lead);
+  closeModal();renderLeads();renderDashboard();
   showToast('Lead adicionado!');
 }
 
-var scraperBase = {
-  'Clínica estética': { pre:['Clínica','Estética','Instituto','Espaço','Centro','Studio','Spa','Ateliê','Corpo','Beauty'], suf:['Bella','Premium','Elite','Vital','Viva','Arte','Plus','Gold','Life','Zen','Care','Glow','Skin','Body','Face','Aesthetics','Bem Estar','Saúde','Harmonia','Natural'] },
-  'Salão de beleza': { pre:['Salão','Studio','Espaço','Hair','Beauty','Atelier','Bela','Chic','Arte'], suf:['Glamour','Hair','Design','da Moda','Total','Plus','Premium','Gold','Elite','Style','Cut','Color','Locks','Curls','Shine','Luxo','Brilho','Charme','Tendência','Visual'] },
-  'Academia': { pre:['Academia','Studio','Gym','Centro','Espaço','Power','Fit','Iron','Strong','Club'], suf:['FitLife','Move','Power','Saúde+','Force','Body','Shape','Evolve','Prime','Max','Plus','Elite','Training','Wellness','Performance','Sport','Vip','Total','Cross','Active'] },
-  'Restaurante': { pre:['Restaurante','Bistrô','Cantina','Grill','Casa','Sabor','Bar','Boteco','Quiosque','Rancho'], suf:['Sabor','Master','do Chef','Nordeste','Cearense','Premium','Caseiro','da Família','Tradição','Especial','Bom Prato','Tempero','Raiz','Origem','Fresh','Gourmet','Delícias','do Mar','da Terra','Fusion'] },
-  'Dentista': { pre:['Odonto','Clínica','Dr','Dra','Centro','Studio','Sorriso','Dental','Oral'], suf:['Sorriso','Dental','Smile','Premium','Clinic','Care','Plus','Elite','Saúde','Oral','Dentes','Perfeito','Brilhante','Life','Estética','Implante','Orto','Family','Kids','Adulto'] },
-  'Concessionária': { pre:['Auto','Car','Moto','Veículos','Multimarcas','Grupo','Prime','Top','Center'], suf:['Shop','Max','Motors','Premium','Car','Veículos','e Cia','Center','Plus','Elite','Gold','Master','Select','Choice','Point','Drive','Speed','Way','Park','Trade'] },
-  'Imobiliária': { pre:['Imóveis','Imobiliária','Casa','Lar','Prime','Elite','Home','Habitat','Grupo','Realty'], suf:['Premium','e Chave','Central','Imóveis','Prime','Select','Gold','Plus','Elite','Total','Solutions','Partners','Realty','Invest','Place','Home','Living','Estate','Group','Brasil'] },
-  'Advocacia': { pre:['Dr','Dra','Escritório','Advocacia','Jurídico','Law','Advogados','Assessoria','Consultoria'], suf:['e Associados','Advogados','Jurídico','e Silva','e Santos','e Oliveira','Legal','Law','Partners','Consultores','Soluções','Defesa','Direito','Assessoria','Juridico','Group','Office','Firm','Brasil','Nordeste'] },
-  'Loja de roupas': { pre:['Loja','Boutique','Store','Fashion','Style','Moda','Grife','Outlet','Shop'], suf:['Fashion','Style','Moda','Trends','Chic','Glam','Plus','Elite','Premium','Gold','Store','Shop','Brand','Look','Wear','Collection','Clothes','Urban','Casual','Sport'] },
-  'Petshop': { pre:['Pet','Animal','Mundo','Casa','Espaço','Zoo','Vet','Club','Centro'], suf:['Shop','Love','Care','Plus','Premium','Total','Animal','Happy','Life','Friend','Vet','Center','Max','Dog','Cat','Store','Land','World','Park','Clube'] },
-  'Farmácia': { pre:['Farmácia','Drogaria','Farma','Saúde','Bem','Vida','Plus','Popular','Disc'], suf:['Popular','Saúde','Bem Estar','Total','Plus','Elite','Premium','Center','Max','Point','Discount','24h','Express','Fast','Life','Vital','Natural','Bem','Família','Care'] },
-  'Escola': { pre:['Escola','Colégio','Instituto','Centro','Academia','Espaço','Curso','Ensino'], suf:['do Saber','do Futuro','Elite','Premium','Plus','Total','Excelência','Conhecimento','Aprender','Educar','Novo','Vida','Luz','Star','Top','Master','Criativo','Dinâmico','Inovador','Integrado'] },
-  'Contabilidade': { pre:['Contábil','Escritório','Grupo','Centro','Assessoria','Consultoria','Conta','Tax','Fiscal'], suf:['Contábil','e Associados','Premium','Total','Expert','Plus','Master','Elite','Solutions','Gestão','Assessoria','Consult','Group','Partners','Fiscal','Tributário','Financeiro','Empresarial','Corporativo','Brasil'] },
-  'Ótica': { pre:['Ótica','Visão','Visual','Lentes','Óculos','Centro','Studio','Look','Eye'], suf:['Premium','Total','Visão','Plus','Elite','Gold','Center','Max','Point','Express','Fashion','Style','Chic','Moderna','Clássica','Popular','Discount','Shop','Store','Care'] },
-};
-
-var ruas = ['Rua das Flores','Av. Beira Mar','Rua Principal','Av. Dom Luís','Rua Tibúrcio Cavalcante','Av. Santos Dumont','Rua Monsenhor Tabosa','Av. Antônio Sales','Rua Ildefonso Albano','Av. Virgílio Távora','Rua Costa Barros','Av. Bezerra de Menezes','Rua Pedro Pereira','Av. Aguanambi','Rua 24 de Maio','Av. Francisco Sá','Rua Major Facundo','Av. João Pessoa','Rua Senador Pompeu','Av. Duque de Caxias'];
-var bairros = ['Meireles','Aldeota','Mucuripe','Varjota','Cocó','Fátima','Dionísio Torres','Benfica','Centro','Papicu','Água Fria','Montese','Parangaba','Messejana','Maraponga','Passaré','Itaperi','Jangurussu','Barra do Ceará','Bom Jardim'];
-var ddds = ['85','84','88','83','87','86'];
-
-function gerarNome(cat, idx){
-  var base = scraperBase[cat] || scraperBase['Clínica estética'];
-  var pre = base.pre[idx % base.pre.length];
-  var suf = base.suf[Math.floor(idx * 7 + 3) % base.suf.length];
-  var suf2 = base.suf[Math.floor(idx * 13 + 7) % base.suf.length];
-  if(idx % 3 === 0) return pre + ' ' + suf;
-  if(idx % 3 === 1) return pre + ' ' + suf2;
-  return pre + ' ' + suf + ' ' + suf2;
-}
-
-function gerarTelefone(idx){
-  var ddd = ddds[idx % ddds.length];
-  var num1 = String(9000 + ((idx * 137 + 41) % 1000)).padStart(4,'0');
-  var num2 = String(1000 + ((idx * 251 + 83) % 9000)).padStart(4,'0');
-  return '(' + ddd + ') 9' + num1 + '-' + num2;
-}
-
-function gerarTelefoneRaw(idx){
-  var ddd = ddds[idx % ddds.length];
-  var num1 = String(9000 + ((idx * 137 + 41) % 1000)).padStart(4,'0');
-  var num2 = String(1000 + ((idx * 251 + 83) % 9000)).padStart(4,'0');
-  return '55' + ddd + '9' + num1 + num2;
-}
-
-function runScraper(){
-  var cat = document.getElementById('scraperCat').value;
-  var city = document.getElementById('scraperCity').value.trim();
-  if(!cat || !city){ showToast('Preencha segmento e cidade!'); return; }
-  document.getElementById('scraperBtnText').textContent = 'Buscando...';
-  document.getElementById('scraperBtn').disabled = true;
-  document.getElementById('scraperProgress').style.display = 'block';
-  document.getElementById('scraperResults').innerHTML = '';
-  scraperResults = [];
-  var bairro = document.getElementById('scraperBairro').value.trim();
-  var total = 100;
-  var done = 0;
-  var steps = ['Abrindo Google Maps...','Varrendo resultados...','Coletando dados...','Filtrando negócios...','Enriquecendo dados...','Quase lá...','Finalizando...'];
-
-  function step(){
-    if(done >= total){ finishScraper(total); return; }
-    document.getElementById('scraperBar').style.width = ((done / total) * 100) + '%';
-    document.getElementById('scraperStatus').textContent = steps[Math.floor((done/total)*steps.length)] + ' (' + done + '/' + total + ')';
-    var bairroUsado = bairro || bairros[done % bairros.length];
-    var rua = ruas[done % ruas.length];
-    var num = String(100 + (done * 17) % 900);
-    var nomeLimpo = gerarNome(cat, done).toLowerCase().replace(/[\s&áàãâäéèêëíìïóòõôöúùûüç]/g, function(c){
-      var map = {'á':'a','à':'a','ã':'a','â':'a','ä':'a','é':'e','è':'e','ê':'e','ë':'e','í':'i','ì':'i','ï':'i','ó':'o','ò':'o','õ':'o','ô':'o','ö':'o','ú':'u','ù':'u','û':'u','ü':'u','ç':'c',' ':''};
-      return map[c] !== undefined ? map[c] : '';
-    });
-    var r = {
-      id: uid(),
-      name: gerarNome(cat, done),
-      seg: cat,
-      city: city,
-      bairro: bairroUsado,
-      phoneRaw: gerarTelefoneRaw(done),
-      phone: gerarTelefone(done),
-      addr: rua + ', ' + num + ' - ' + bairroUsado + ', ' + city,
-      email: nomeLimpo + '@gmail.com',
-      site: '@' + nomeLimpo
-    };
-    scraperResults.push(r);
-    appendResult(r);
-    done++;
-    setTimeout(step, done < 20 ? 120 : done < 60 ? 60 : 30);
+// SCRAPER APIFY
+async function runScraper(){
+  var key=localStorage.getItem('apifyKey');
+  if(!key){
+    showToast('Configure a API Key da Apify!');
+    document.getElementById('apifyAlert').style.display='block';
+    return;
   }
-  setTimeout(step, 200);
+  
+  var cat=document.getElementById('scraperCat').value;
+  var city=document.getElementById('scraperCity').value.trim();
+  var bairro=document.getElementById('scraperBairro').value.trim();
+  var limit=parseInt(document.getElementById('scraperLimit').value);
+  var today = new Date().toDateString();
+  var todayLeads = leads.filter(function(l){ 
+  return l.createdAt && new Date(l.createdAt).toDateString() === today; 
+  });
+  if(todayLeads.length >= 15){
+  showToast('Limite diário de 15 leads atingido!');
+  return;
+  }
+  if(!cat||!city){showToast('Preencha segmento e cidade!');return;}
+  
+  document.getElementById('scraperBtnText').textContent='Buscando...';
+  document.getElementById('scraperBtn').disabled=true;
+  document.getElementById('scraperProgress').style.display='block';
+  document.getElementById('scraperResults').innerHTML='';
+  document.getElementById('scraperStatus').textContent='Iniciando busca no Google Maps...';
+  document.getElementById('scraperBar').style.width='20%';
+  scraperResults=[];
+  
+  try{
+    var locationQuery=bairro?(bairro+', '+city+', Brasil'):(city+', Brasil');
+    
+    var res=await fetch('https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token='+key,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        searchStringsArray:[cat],
+        locationQuery:locationQuery,
+        maxCrawledPlacesPerSearch:limit,
+        language:'pt-BR',
+        countryCode:'br'
+      })
+    });
+    
+    var run=await res.json();
+    var runId=run.data.id;
+    
+    document.getElementById('scraperStatus').textContent='Extraindo dados do Google Maps...';
+    document.getElementById('scraperBar').style.width='50%';
+    
+    await pollRun(runId,key);
+    
+  }catch(e){
+    document.getElementById('scraperBtn').disabled=false;
+    document.getElementById('scraperBtnText').textContent='Buscar Leads';
+    document.getElementById('scraperProgress').style.display='none';
+    showToast('Erro: '+e.message);
+  }
 }
 
-function finishScraper(total){
-  document.getElementById('scraperBtnText').textContent = 'Buscar Leads';
-  document.getElementById('scraperBtn').disabled = false;
-  document.getElementById('scraperBar').style.width = '100%';
-  document.getElementById('scraperStatus').textContent = total + ' negócios encontrados!';
-  showToast(total + ' leads encontrados!');
+async function pollRun(runId,key){
+  var maxAttempts=60;
+  var attempts=0;
+  
+  var interval=setInterval(async function(){
+    attempts++;
+    if(attempts>maxAttempts){
+      clearInterval(interval);
+      document.getElementById('scraperBtn').disabled=false;
+      document.getElementById('scraperBtnText').textContent='Buscar Leads';
+      document.getElementById('scraperProgress').style.display='none';
+      showToast('Timeout: busca demorou muito');
+      return;
+    }
+    
+    try{
+      var res=await fetch('https://api.apify.com/v2/actor-runs/'+runId+'?token='+key);
+      var data=await res.json();
+      var status=data.data.status;
+      
+      if(status==='SUCCEEDED'){
+        clearInterval(interval);
+        document.getElementById('scraperBar').style.width='80%';
+        document.getElementById('scraperStatus').textContent='Processando resultados...';
+        
+        var datasetId=data.data.defaultDatasetId;
+        var itemsRes=await fetch('https://api.apify.com/v2/datasets/'+datasetId+'/items?token='+key);
+        var items=await itemsRes.json();
+        
+        document.getElementById('scraperBar').style.width='100%';
+        document.getElementById('scraperStatus').textContent=items.length+' negócios encontrados!';
+        document.getElementById('scraperBtn').disabled=false;
+        document.getElementById('scraperBtnText').textContent='Buscar Leads';
+        
+        if(!items||!items.length){
+          document.getElementById('scraperResults').innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum resultado. Tente outro segmento ou cidade.</div></div>';
+          return;
+        }
+        
+        items.forEach(function(item){appendResult(item);});
+        showToast(items.length+' leads encontrados!');
+        
+      }else if(status==='FAILED'){
+        clearInterval(interval);
+        document.getElementById('scraperBtn').disabled=false;
+        document.getElementById('scraperBtnText').textContent='Buscar Leads';
+        document.getElementById('scraperProgress').style.display='none';
+        showToast('Erro na busca. Tente novamente.');
+      }
+    }catch(e){
+      clearInterval(interval);
+      document.getElementById('scraperBtn').disabled=false;
+      document.getElementById('scraperBtnText').textContent='Buscar Leads';
+      document.getElementById('scraperProgress').style.display='none';
+      showToast('Erro: '+e.message);
+    }
+  },3000);
 }
 
-function appendResult(r){
-  var icons = {'Clínica estética':'💆','Salão de beleza':'💇','Academia':'🏋','Restaurante':'🍽','Dentista':'🦷','Concessionária':'🚗','Imobiliária':'🏠','Advocacia':'⚖','Loja de roupas':'👗','Petshop':'🐾','Farmácia':'💊','Escola':'🎓','Contabilidade':'📊','Ótica':'👓'};
-  var icon = icons[r.seg] || '🏢';
-  var el = document.createElement('div');
-  el.className = 'scraper-box';
-  el.id = 'sr-' + r.id;
-  var waLink = 'https://api.whatsapp.com/send?phone=' + r.phoneRaw;
-  el.innerHTML = '<div class="result-item">'
-    + '<div class="result-icon">' + icon + '</div>'
-    + '<div style="flex:1;min-width:0">'
-    + '<div class="result-name">' + escHtml(r.name) + '</div>'
-    + '<div class="result-info">' + escHtml(r.phone) + ' &middot; ' + escHtml(r.bairro || r.city) + '</div>'
-    + '<div class="result-info" style="margin-top:2px">' + escHtml(r.addr) + '</div>'
-    + '<div class="result-actions">'
-    + '<button class="result-btn" onclick="addFromScraper(\'' + r.id + '\')">+ Adicionar ao CRM</button>'
-    + '<a href="' + waLink + '" target="_blank" class="result-btn">WhatsApp</a>'
-    + '</div></div></div>';
+function appendResult(item){
+  var icons={'Clínica estética':'💆','Salão de beleza':'💇','Academia':'🏋','Restaurante':'🍽','Dentista':'🦷','Concessionária':'🚗','Imobiliária':'🏠','Advocacia':'⚖','Loja de roupas':'👗','Petshop':'🐾','Farmácia':'💊','Escola':'🎓','Contabilidade':'📊','Ótica':'👓'};
+  var icon=icons[document.getElementById('scraperCat').value]||'🏢';
+  
+  var id=uid();
+  var phone=item.phone||item.phoneNumber||'';
+  var phoneRaw=phone?'55'+phone.replace(/\D/g,''):'';
+  var name=item.title||item.name||'Sem nome';
+  var addr=item.address||item.fullAddress||'';
+  var city=document.getElementById('scraperCity').value;
+  
+  var obj={
+    id:id,name:name,
+    seg:document.getElementById('scraperCat').value,
+    city:city,phone:phone,phoneRaw:phoneRaw,
+    addr:addr,email:'',site:item.url||''
+  };
+  scraperResults.push(obj);
+  
+  var el=document.createElement('div');
+  el.className='scraper-box';
+  el.id='sr-'+id;
+  el.innerHTML='<div class="result-item">'
+    +'<div class="result-icon">'+icon+'</div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div class="result-name">'+esc(name)+(item.totalScore?' <span style="color:var(--gold);font-size:12px">★ '+item.totalScore+'</span>':'')+'</div>'
+    +'<div class="result-info">'+esc(phone||'Telefone não disponível')+' &middot; '+esc(city)+'</div>'
+    +'<div class="result-info">'+esc(addr)+'</div>'
+    +'<div class="result-actions">'
+    +'<button class="result-btn" onclick="addFromScraper(\''+id+'\')">+ Adicionar ao CRM</button>'
+    +(phoneRaw?'<a href="https://api.whatsapp.com/send?phone='+phoneRaw+'" class="result-btn" target="_blank">WhatsApp</a>':'')
+    +(item.url?'<a href="'+esc(item.url)+'" class="result-btn" target="_blank">Ver no Maps</a>':'')
+    +'</div></div></div>';
   document.getElementById('scraperResults').appendChild(el);
 }
 
-function addFromScraper(id){
-  var r = scraperResults.find(function(x){ return x.id === id; });
-  if(!r) return;
-  var exists = leads.find(function(l){ return l.phone === r.phone; });
-  if(exists){ showToast('Lead já existe no CRM!'); return; }
-  var lead = {
-    id: uid(), name: r.name, seg: r.seg, city: r.city,
-    phone: r.phone, phoneRaw: r.phoneRaw,
-    email: r.email, addr: r.addr, site: r.site,
-    status: 'novo', note: '', createdAt: Date.now(),
-    history: [{ date: Date.now(), text: 'Lead importado via OrusSearch de ' + r.city + '.' }]
+async function addFromScraper(id){
+  var r=scraperResults.find(function(x){return x.id===id;});
+  if(!r)return;
+  var exists=leads.find(function(l){return l.phone&&l.phone===r.phone;});
+  if(exists){showToast('Lead já existe no CRM!');return;}
+  var lead={
+    id:uid(),name:r.name,seg:r.seg,city:r.city,
+    phone:r.phone,phoneRaw:r.phoneRaw,email:r.email,addr:r.addr,site:r.site,
+    status:'novo',note:'',createdAt:Date.now(),
+    history:[{date:Date.now(),text:'Lead importado via OrusSearch - '+r.city+'.'}]
   };
-  leads.push(lead); save();
-  var btns = document.querySelectorAll('#sr-' + id + ' .result-btn');
-  if(btns[0]){ btns[0].textContent = 'Adicionado!'; btns[0].style.color = 'var(--green)'; btns[0].style.borderColor = 'var(--green)'; btns[0].disabled = true; }
+  leads.push(lead);
+  await saveLead(lead);
+  var btn=document.querySelector('#sr-'+id+' .result-btn');
+  if(btn){btn.textContent='Adicionado!';btn.style.color='var(--green)';btn.style.borderColor='var(--green)';btn.disabled=true;}
+  renderDashboard();
   showToast('Lead adicionado ao CRM!');
 }
 
+// RELATORIO
 function renderRelatorio(){
-  var counts = { novo:0, abordado:0, agendado:0, fechado:0, 'sem-resposta':0 };
-  leads.forEach(function(l){ if(counts[l.status] !== undefined) counts[l.status]++; });
-  document.getElementById('fn-novo').textContent = counts.novo;
-  document.getElementById('fn-abordado').textContent = counts.abordado;
-  document.getElementById('fn-agendado').textContent = counts.agendado;
-  document.getElementById('fn-fechado').textContent = counts.fechado;
-  document.getElementById('fn-sem').textContent = counts['sem-resposta'];
-  var total = leads.length || 1;
-  document.getElementById('conv-rate').textContent = Math.round((counts.agendado / total) * 100) + '%';
-  document.getElementById('close-rate').textContent = Math.round((counts.fechado / total) * 100) + '%';
+  var counts={novo:0,abordado:0,agendado:0,fechado:0,'sem-resposta':0};
+  leads.forEach(function(l){if(counts[l.status]!==undefined)counts[l.status]++;});
+  document.getElementById('fn-novo').textContent=counts.novo;
+  document.getElementById('fn-abordado').textContent=counts.abordado;
+  document.getElementById('fn-agendado').textContent=counts.agendado;
+  document.getElementById('fn-fechado').textContent=counts.fechado;
+  document.getElementById('fn-sem').textContent=counts['sem-resposta'];
+  var total=leads.length||1;
+  document.getElementById('conv-rate').textContent=Math.round((counts.agendado/total)*100)+'%';
+  document.getElementById('close-rate').textContent=Math.round((counts.fechado/total)*100)+'%';
 }
 
 function exportCSV(){
-  if(!leads.length){ showToast('Nenhum lead para exportar.'); return; }
-  var cols = ['Nome','Segmento','Cidade','Telefone','Email','Endereço','Site','Status','Anotação','Data Cadastro'];
-  var rows = leads.map(function(l){
-    return [l.name,l.seg,l.city||'',l.phone,l.email,l.addr,l.site,getStatusLabel(l.status),l.note||'',new Date(l.createdAt).toLocaleDateString('pt-BR')]
-      .map(function(v){ return '"' + (v||'').replace(/"/g,'""') + '"'; }).join(',');
+  if(!leads.length){showToast('Nenhum lead para exportar.');return;}
+  var cols=['Nome','Segmento','Cidade','Telefone','Email','Endereço','Site','Status','Anotação','Data Cadastro'];
+  var rows=leads.map(function(l){
+    return [l.name,l.seg,l.city||'',l.phone,l.email,l.addr,l.site,getLabel(l.status),l.note||'',new Date(l.createdAt).toLocaleDateString('pt-BR')]
+      .map(function(v){return '"'+(v||'').replace(/"/g,'""')+'"';}).join(',');
   });
-  var csv = cols.join(',') + '\n' + rows.join('\n');
-  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a'); a.href = url;
-  a.download = 'leads_orus_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
+  var csv=cols.join(',')+'\n'+rows.join('\n');
+  var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='leads_orus_'+Date.now()+'.csv';a.click();
   showToast('CSV exportado!');
 }
 </script>
