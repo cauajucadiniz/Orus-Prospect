@@ -326,16 +326,8 @@ select.inp option{background:var(--dark)}
 <!-- SCRAPER -->
 <div class="page" id="page-scraper">
   <div class="section-title">OrusSearch</div>
-  
-  <div id="apifyAlert" class="alert" style="display:none">
-    Configure sua API Key da Apify em <strong>localStorage.setItem('apifyKey', 'SUA_KEY')</strong> no console do navegador. 
-    <a href="https://console.apify.com/account/integrations" target="_blank">Obter chave gratuita aqui</a>
-  </div>
 
   <div class="card card-gold" style="margin-bottom:16px">
-    <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">
-      Busca negócios reais no Google Maps usando a Apify. Custo aproximado: <strong style="color:var(--gold)">$0.20 por 50 leads</strong>.
-    </div>
     <div class="input-group">
       <label class="input-label">Segmento</label>
       <select class="inp" id="scraperCat">
@@ -796,32 +788,18 @@ async function addLead(){
 // SCRAPER APIFY
 async function runScraper(){
 
-  if(!isAuthReady || !currentUser){
-    showToast('Aguarde o carregamento do usuário...');
+  // 🔒 GARANTE QUE O USUÁRIO EXISTE
+  if(!currentUser || !currentUser.id){
+    showToast('Recarregue a página e aguarde 2 segundos.');
     return;
   }
 
-  var key = localStorage.getItem('apifyKey');
-  if(!key){
-    showToast('Configure a API Key da Apify!');
-    document.getElementById('apifyAlert').style.display = 'block';
-    return;
-  }
+  var key = 'SUA_KEY_AQUI'; // 👈 SUA KEY GLOBAL
 
-  var cat = document.getElementById('scraperCat').value;
-  var city = document.getElementById('scraperCity').value.trim();
-  var bairro = document.getElementById('scraperBairro').value.trim();
-  var limit = parseInt(document.getElementById('scraperLimit').value);
-
-  var today = new Date().toDateString();
-  var todayLeads = leads.filter(function(l){ 
-    return l.createdAt && new Date(l.createdAt).toDateString() === today; 
-  });
-
-  if(todayLeads.length >= 15){
-    showToast('Limite diário de 15 leads atingido!');
-    return;
-  }
+  var cat=document.getElementById('scraperCat').value;
+  var city=document.getElementById('scraperCity').value.trim();
+  var bairro=document.getElementById('scraperBairro').value.trim();
+  var limit=parseInt(document.getElementById('scraperLimit').value);
 
   if(!cat || !city){
     showToast('Preencha segmento e cidade!');
@@ -832,13 +810,13 @@ async function runScraper(){
   document.getElementById('scraperBtn').disabled=true;
   document.getElementById('scraperProgress').style.display='block';
   document.getElementById('scraperResults').innerHTML='';
-  document.getElementById('scraperStatus').textContent='Iniciando busca no Google Maps...';
-  document.getElementById('scraperBar').style.width='20%';
-
-  scraperResults=[];
+  document.getElementById('scraperStatus').textContent='Buscando no Google Maps...';
+  document.getElementById('scraperBar').style.width='30%';
 
   try{
-    var locationQuery = bairro ? (bairro+', '+city+', Brasil') : (city+', Brasil');
+    var locationQuery = bairro
+      ? (bairro+', '+city+', Brasil')
+      : (city+', Brasil');
 
     var res = await fetch('https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token='+key,{
       method:'POST',
@@ -846,30 +824,30 @@ async function runScraper(){
       body:JSON.stringify({
         searchStringsArray:[cat],
         locationQuery:locationQuery,
-        maxCrawledPlacesPerSearch:limit,
-        language:'pt-BR',
-        countryCode:'br'
+        maxCrawledPlacesPerSearch:limit
       })
     });
 
     var run = await res.json();
 
+    // 🔥 PROTEÇÃO CONTRA ERRO
     if(!run || !run.data || !run.data.id){
-      throw new Error('Erro ao iniciar scraping (Apify)');
+      throw new Error('Erro ao iniciar busca');
     }
 
     var runId = run.data.id;
 
-    document.getElementById('scraperStatus').textContent='Extraindo dados do Google Maps...';
-    document.getElementById('scraperBar').style.width='50%';
+    document.getElementById('scraperBar').style.width='60%';
+    document.getElementById('scraperStatus').textContent='Coletando dados...';
 
-    await pollRun(runId,key);
+    await pollRun(runId, key);
 
   }catch(e){
+    console.error(e);
+    showToast('Erro ao buscar leads');
     document.getElementById('scraperBtn').disabled=false;
     document.getElementById('scraperBtnText').textContent='Buscar Leads';
     document.getElementById('scraperProgress').style.display='none';
-    showToast('Erro: '+e.message);
   }
 }
 
