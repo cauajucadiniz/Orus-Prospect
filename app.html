@@ -788,14 +788,6 @@ async function addLead(){
 // SCRAPER APIFY
 async function runScraper(){
 
-  // 🔒 GARANTE QUE O USUÁRIO EXISTE
-  if(!currentUser || !currentUser.id){
-    showToast('Recarregue a página e aguarde 2 segundos.');
-    return;
-  }
-
-  var key = 'SUA_KEY_AQUI'; // 👈 SUA KEY GLOBAL
-
   var cat=document.getElementById('scraperCat').value;
   var city=document.getElementById('scraperCity').value.trim();
   var bairro=document.getElementById('scraperBairro').value.trim();
@@ -810,101 +802,136 @@ async function runScraper(){
   document.getElementById('scraperBtn').disabled=true;
   document.getElementById('scraperProgress').style.display='block';
   document.getElementById('scraperResults').innerHTML='';
-  document.getElementById('scraperStatus').textContent='Buscando no Google Maps...';
+  document.getElementById('scraperStatus').textContent='Buscando leads...';
   document.getElementById('scraperBar').style.width='30%';
 
   try{
-    var res = await fetch('/api/scraper', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    cat: cat,
-    city: city,
-    bairro: bairro,
-    limit: limit
-  })
-});
 
-    var run = await res.json();
+    const res = await fetch('/api/scraper', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cat, city, bairro, limit })
+    });
 
-    // 🔥 PROTEÇÃO CONTRA ERRO
-    if(!run || !run.data || !run.data.id){
-      throw new Error('Erro ao iniciar busca');
+    const data = await res.json();
+
+    if(!data || !data.results){
+      throw new Error('Resposta inválida');
     }
 
-    var runId = run.data.id;
+    document.getElementById('scraperBar').style.width='100%';
+    document.getElementById('scraperStatus').textContent=data.results.length+' leads encontrados!';
 
-    document.getElementById('scraperBar').style.width='60%';
-    document.getElementById('scraperStatus').textContent='Coletando dados...';
+    document.getElementById('scraperBtn').disabled=false;
+    document.getElementById('scraperBtnText').textContent='Buscar Leads';
 
-    await pollRun(runId, key);
+    if(!data.results.length){
+      document.getElementById('scraperResults').innerHTML =
+        '<div class="empty-state">Nenhum resultado encontrado</div>';
+      return;
+    }
+
+    data.results.forEach(function(item){
+      appendResult(item);
+    });
+
+    showToast(data.results.length+' leads encontrados!');
 
   }catch(e){
     console.error(e);
     showToast('Erro ao buscar leads');
+
     document.getElementById('scraperBtn').disabled=false;
     document.getElementById('scraperBtnText').textContent='Buscar Leads';
     document.getElementById('scraperProgress').style.display='none';
   }
 }
 
-async function pollRun(runId,key){
-  var maxAttempts=60;
-  var attempts=0;
-  
-  var interval=setInterval(async function(){
+async function pollRun(runId, key){
+  var maxAttempts = 60;
+  var attempts = 0;
+
+  var interval = setInterval(async function(){
     attempts++;
-    if(attempts>maxAttempts){
+
+    if(attempts > maxAttempts){
       clearInterval(interval);
-      document.getElementById('scraperBtn').disabled=false;
-      document.getElementById('scraperBtnText').textContent='Buscar Leads';
-      document.getElementById('scraperProgress').style.display='none';
+      document.getElementById('scraperBtn').disabled = false;
+      document.getElementById('scraperBtnText').textContent = 'Buscar Leads';
+      document.getElementById('scraperProgress').style.display = 'none';
       showToast('Timeout: busca demorou muito');
       return;
     }
-    
+
     try{
-      var res=await fetch('https://api.apify.com/v2/actor-runs/'+runId+'?token='+key);
-      var data=await res.json();
-      var status=data.data.status;
-      
-      if(status==='SUCCEEDED'){
+      var res = await fetch('https://api.apify.com/v2/actor-runs/' + runId + '?token=' + key);
+
+      if(!res.ok){
+        throw new Error('Erro na requisição: ' + res.status);
+      }
+
+      var json = await res.json();
+
+      // 🔥 CORREÇÃO PRINCIPAL
+      if(!json || !json.data){
+        throw new Error('Resposta inválida da API');
+      }
+
+      var status = json.data.status;
+
+      if(status === 'SUCCEEDED'){
         clearInterval(interval);
-        document.getElementById('scraperBar').style.width='80%';
-        document.getElementById('scraperStatus').textContent='Processando resultados...';
-        
-        var datasetId=data.data.defaultDatasetId;
-        var itemsRes=await fetch('https://api.apify.com/v2/datasets/'+datasetId+'/items?token='+key);
-        var items=await itemsRes.json();
-        
-        document.getElementById('scraperBar').style.width='100%';
-        document.getElementById('scraperStatus').textContent=items.length+' negócios encontrados!';
-        document.getElementById('scraperBtn').disabled=false;
-        document.getElementById('scraperBtnText').textContent='Buscar Leads';
-        
-        if(!items||!items.length){
-          document.getElementById('scraperResults').innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum resultado. Tente outro segmento ou cidade.</div></div>';
+
+        document.getElementById('scraperBar').style.width = '80%';
+        document.getElementById('scraperStatus').textContent = 'Processando resultados...';
+
+        var datasetId = json.data.defaultDatasetId;
+
+        var itemsRes = await fetch('https://api.apify.com/v2/datasets/' + datasetId + '/items?token=' + key);
+
+        if(!itemsRes.ok){
+          throw new Error('Erro ao buscar resultados');
+        }
+
+        var items = await itemsRes.json();
+
+        document.getElementById('scraperBar').style.width = '100%';
+        document.getElementById('scraperStatus').textContent = items.length + ' negócios encontrados!';
+        document.getElementById('scraperBtn').disabled = false;
+        document.getElementById('scraperBtnText').textContent = 'Buscar Leads';
+
+        if(!items || !items.length){
+          document.getElementById('scraperResults').innerHTML =
+            '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum resultado encontrado.</div></div>';
           return;
         }
-        
-        items.forEach(function(item){appendResult(item);});
-        showToast(items.length+' leads encontrados!');
-        
-      }else if(status==='FAILED'){
-        clearInterval(interval);
-        document.getElementById('scraperBtn').disabled=false;
-        document.getElementById('scraperBtnText').textContent='Buscar Leads';
-        document.getElementById('scraperProgress').style.display='none';
-        showToast('Erro na busca. Tente novamente.');
+
+        items.forEach(function(item){
+          appendResult(item);
+        });
+
+        showToast(items.length + ' leads encontrados!');
       }
-    }catch(e){
+
+      else if(status === 'FAILED' || status === 'ABORTED'){
+        clearInterval(interval);
+        document.getElementById('scraperBtn').disabled = false;
+        document.getElementById('scraperBtnText').textContent = 'Buscar Leads';
+        document.getElementById('scraperProgress').style.display = 'none';
+        showToast('Erro na execução da busca.');
+      }
+
+    } catch(e){
       clearInterval(interval);
-      document.getElementById('scraperBtn').disabled=false;
-      document.getElementById('scraperBtnText').textContent='Buscar Leads';
-      document.getElementById('scraperProgress').style.display='none';
-      showToast('Erro: '+e.message);
+      document.getElementById('scraperBtn').disabled = false;
+      document.getElementById('scraperBtnText').textContent = 'Buscar Leads';
+      document.getElementById('scraperProgress').style.display = 'none';
+
+      console.error(e); // 🔥 IMPORTANTE PRA DEBUG
+      showToast('Erro: ' + e.message);
     }
-  },3000);
+
+  }, 3000);
 }
 
 function appendResult(item){
