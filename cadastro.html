@@ -72,19 +72,19 @@
             });
 
             if (error) {
-                msg.style.color = "#ff4444";
-                msg.innerText = "Erro: " + error.message;
-                btn.disabled = false;
-                btn.innerText = "Finalizar e Ativar";
-            } else {
-                msg.style.color = "#D4AF37";
-                msg.innerText = "Conta criada com sucesso! Redirecionando...";
-                
-                // Redireciona para o login oficial após 2 segundos
-                setTimeout(() => {
-                    window.location.href = "/"; 
-                }, 2000);
-            }
+    msg.style.color = "#ff4444";
+    msg.innerText = "Erro: " + error.message;
+    btn.disabled = false;
+    btn.innerText = "Finalizar e Ativar";
+} else {
+    msg.style.color = "#D4AF37";
+    msg.innerText = "Conta criada com sucesso! Redirecionando para o login...";
+    
+    // Esse comando faz voltar para a página inicial (login) após 2 segundos
+    setTimeout(() => {
+        window.location.href = "/"; 
+    }, 2000);
+}
         });
     </script>
 </body>
