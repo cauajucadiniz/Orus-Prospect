@@ -72,19 +72,31 @@
             });
 
             if (error) {
-    msg.style.color = "#ff4444";
-    msg.innerText = "Erro: " + error.message;
-    btn.disabled = false;
-    btn.innerText = "Finalizar e Ativar";
-} else {
-    msg.style.color = "#D4AF37";
-    msg.innerText = "Conta criada com sucesso! Redirecionando para o login...";
-    
-    // Esse comando faz voltar para a página inicial (login) após 2 segundos
-    setTimeout(() => {
-        window.location.href = "/"; 
-    }, 2000);
-}
+                // Mensagem de erro caso algo falhe
+                msg.style.color = "#ff4444";
+                msg.innerText = "Erro: " + error.message;
+                btn.disabled = false;
+                btn.innerText = "Finalizar e Ativar";
+            } else {
+                // MENSAGEM DE SUCESSO E AVISO DO EMAIL
+                msg.style.color = "#D4AF37";
+                msg.innerHTML = `
+                    <div style="margin-top: 20px; border-top: 1px solid #2a2a2a; padding-top: 20px;">
+                        <strong>CONTA CRIADA COM SUCESSO!</strong><br><br>
+                        📧 Enviamos um e-mail de confirmação para você.<br>
+                        <strong>Você deve clicar no link do e-mail</strong> antes de fazer login.<br><br>
+                        <small style="color: #888;">Redirecionando para o Login em 6 segundos...</small>
+                    </div>
+                `;
+
+                // Bloqueia o botão para evitar cliques duplos
+                btn.style.display = "none";
+
+                // Redireciona após 6 segundos para dar tempo do usuário ler
+                setTimeout(() => {
+                    window.location.href = "/"; 
+                }, 6000);
+            }
         });
     </script>
 </body>
