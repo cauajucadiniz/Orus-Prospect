@@ -814,19 +814,16 @@ async function runScraper(){
   document.getElementById('scraperBar').style.width='30%';
 
   try{
-    var locationQuery = bairro
-      ? (bairro+', '+city+', Brasil')
-      : (city+', Brasil');
-
-    var res = await fetch('https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token='+key,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        searchStringsArray:[cat],
-        locationQuery:locationQuery,
-        maxCrawledPlacesPerSearch:limit
-      })
-    });
+    var res = await fetch('/api/scraper', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    cat: cat,
+    city: city,
+    bairro: bairro,
+    limit: limit
+  })
+});
 
     var run = await res.json();
 
