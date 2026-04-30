@@ -787,6 +787,35 @@ async function addLead(){
 
 // SCRAPER APIFY
 async function runScraper(){
+  // --- TRAVA DE SEGURANÇA: LIMITE DIÁRIO ---
+  try {
+    const hoje = new Date().toISOString().split('T')[0]; // Pega a data de hoje (AAAA-MM-DD)
+    
+    // Faz a contagem de quantos leads o usuário já cadastrou hoje
+    const { count, error: countError } = await sb
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', currentUser.id)
+      .gte('created_at', hoje);
+
+    if (countError) throw countError;
+
+    // Se o contador for 15 ou mais, bloqueia a busca
+    if (count >= 15) {
+      showToast('⚠️ Limite diário atingido! (15 leads/dia)');
+      const resContainer = document.getElementById('scraperResults');
+      resContainer.innerHTML = `
+        <div class="card" style="border-color: #ff4444; text-align: center; padding: 20px;">
+          <h3 style="color: #ff4444;">LIMITE ATINGIDO</h3>
+          <p style="font-size: 13px; color: #888;">Você já adicionou ${count} leads hoje. Sua cota diária é de 15 leads. Volte amanhã!</p>
+        </div>
+      `;
+      return; // Para a função aqui e não faz a busca no Google Maps
+    }
+  } catch (err) {
+    console.error("Erro ao verificar limite:", err);
+  }
+  // --- FIM DA TRAVA ---
 
   var cat=document.getElementById('scraperCat').value;
   var city=document.getElementById('scraperCity').value.trim();
@@ -806,7 +835,6 @@ async function runScraper(){
   document.getElementById('scraperBar').style.width='30%';
 
   try{
-
     const res = await fetch('/api/scraper', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
