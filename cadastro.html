@@ -4,12 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro - Orus Prospect</title>
-    <!-- Favicon Dourado -->
     <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230A0A0A"/><circle cx="50" cy="50" r="44" fill="none" stroke="%23C9A84C" stroke-width="2"/><polygon points="50,14 82,70 18,70" fill="none" stroke="%23C9A84C" stroke-width="2.5" stroke-linejoin="round"/><circle cx="50" cy="42" r="2.5" fill="%23C9A84C"/></svg>'>
-    
-    <!-- Biblioteca do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
         body { background-color: #000; color: #D4AF37; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .container { background-color: #111; padding: 40px; border-radius: 10px; border: 1px solid #D4AF37; box-shadow: 0px 0px 20px rgba(212, 175, 55, 0.2); width: 100%; max-width: 400px; text-align: center; }
@@ -17,85 +13,94 @@
         .input-group { text-align: left; margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-size: 0.9em; }
         input { width: 100%; padding: 12px; background-color: #222; border: 1px solid #444; border-radius: 5px; color: white; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #D4AF37; }
         button { width: 100%; padding: 12px; background-color: #D4AF37; color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         button:hover { background-color: #b8962e; transform: scale(1.02); }
         button:disabled { background-color: #555; cursor: not-allowed; }
-        #mensagem { margin-top: 15px; font-size: 0.9em; }
+        #mensagem { margin-top: 15px; font-size: 0.9em; line-height: 1.5; }
+        .lock-msg { color: #ff4444; font-weight: bold; border: 1px solid #ff4444; padding: 15px; border-radius: 8px; background: rgba(255,68,68,0.1); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Criar Acesso</h2>
-        <p style="color: #888; font-size: 0.8em; margin-bottom: 25px;">Defina seu login para o Orus Prospect</p>
-        
-        <form id="registro-form">
-            <div class="input-group">
-                <label>E-mail Corporativo</label>
-                <input type="email" id="email" placeholder="seu@email.com" required>
-            </div>
-
-            <div class="input-group">
-                <label>Senha de Acesso</label>
-                <input type="password" id="password" placeholder="Mínimo 6 caracteres" required>
-            </div>
-
-            <button type="submit" id="btn-submit">Finalizar e Ativar</button>
-        </form>
-        <div id="mensagem"></div>
+    <div class="container" id="mainContainer">
+        <div id="content">
+            <h2>Criar Acesso</h2>
+            <p id="subtitulo" style="color: #888; font-size: 0.8em; margin-bottom: 25px;">Defina seu login para o Orus Prospect</p>
+            
+            <form id="registro-form">
+                <div class="input-group">
+                    <label>E-mail Corporativo</label>
+                    <input type="email" id="email" placeholder="seu@email.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Senha de Acesso</label>
+                    <input type="password" id="password" placeholder="Mínimo 6 caracteres" required>
+                </div>
+                <button type="submit" id="btn-submit">Finalizar e Ativar</button>
+            </form>
+            <div id="mensagem"></div>
+        </div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO DO SUPABASE
+        // CONFIGURAÇÃO
         const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        const content = document.getElementById('content');
         const form = document.getElementById('registro-form');
         const msg = document.getElementById('mensagem');
         const btn = document.getElementById('btn-submit');
+
+        // TRAVA 1: VERIFICA SE JÁ EXISTE CADASTRO NO DISPOSITIVO
+        if (localStorage.getItem('orus_locked')) {
+            content.innerHTML = `
+                <div class="lock-msg">
+                    🚫 ACESSO RESTRITO<br><br>
+                    Este dispositivo já realizou um cadastro.<br>
+                    Para criar uma nova conta, contate o administrador da Orus.
+                </div>
+            `;
+        }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             btn.disabled = true;
             btn.innerText = "Processando...";
-            msg.innerText = "";
-
+            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // Criar usuário no Supabase Auth
+            // Criar usuário no Supabase
             const { data, error } = await _supabase.auth.signUp({
                 email: email,
                 password: password,
             });
 
             if (error) {
-                // Mensagem de erro caso algo falhe
                 msg.style.color = "#ff4444";
                 msg.innerText = "Erro: " + error.message;
                 btn.disabled = false;
                 btn.innerText = "Finalizar e Ativar";
             } else {
-                // MENSAGEM DE SUCESSO E AVISO DO EMAIL
+                // TRAVA 2: MARCA O DISPOSITIVO APÓS SUCESSO
+                localStorage.setItem('orus_locked', 'true');
+
+                form.style.display = "none";
+                document.getElementById('subtitulo').style.display = "none";
+                document.querySelector('h2').innerText = "Verifique seu E-mail";
+                
                 msg.style.color = "#D4AF37";
                 msg.innerHTML = `
-                    <div style="margin-top: 20px; border-top: 1px solid #2a2a2a; padding-top: 20px;">
-                        <strong>CONTA CRIADA COM SUCESSO!</strong><br><br>
-                        📧 Enviamos um e-mail de confirmação para você.<br>
-                        <strong>Você deve clicar no link do e-mail</strong> antes de fazer login.<br><br>
-                        <small style="color: #888;">Redirecionando para o Login em 6 segundos...</small>
+                    <div style="margin-top: 20px; padding: 15px; border: 1px solid #c9a84c; border-radius: 8px;">
+                        📧 <strong>Enviamos um link de ativação!</strong><br><br>
+                        Você deve clicar no link enviado para o e-mail <strong>${email}</strong> para liberar o login.<br><br>
+                        <small style="color: #888;">Voltando para o login em 8 segundos...</small>
                     </div>
                 `;
 
-                // Bloqueia o botão para evitar cliques duplos
-                btn.style.display = "none";
-
-                // Redireciona após 6 segundos para dar tempo do usuário ler
-                setTimeout(() => {
-                    window.location.href = "/"; 
-                }, 6000);
+                setTimeout(() => { window.location.href = "/"; }, 8000);
             }
         });
     </script>
