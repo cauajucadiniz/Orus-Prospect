@@ -786,55 +786,42 @@ async function addLead(){
 }
 
 // SCRAPER APIFY
-async function runScraper(){
-  // --- TRAVA DE SEGURANÇA: LIMITE DIÁRIO ---
+async function runScraper() {
+  const hoje = new Date().toISOString().split('T')[0];
+
   try {
-    const hoje = new Date().toISOString().split('T')[0]; // Pega a data de hoje (AAAA-MM-DD)
-    
-    // Faz a contagem de quantos leads o usuário já cadastrou hoje
-    const { count, error: countError } = await sb
-      .from('leads')
+    // 1. VERIFICA LIMITE DE BUSCAS (Não de leads salvos)
+    const { count, error: logError } = await sb
+      .from('logs_buscas')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', currentUser.id)
-      .gte('created_at', hoje);
+      .eq('created_at', hoje);
 
-    if (countError) throw countError;
-
-    // Se o contador for 15 ou mais, bloqueia a busca
     if (count >= 15) {
-      showToast('⚠️ Limite diário atingido! (15 leads/dia)');
-      const resContainer = document.getElementById('scraperResults');
-      resContainer.innerHTML = `
-        <div class="card" style="border-color: #ff4444; text-align: center; padding: 20px;">
-          <h3 style="color: #ff4444;">LIMITE ATINGIDO</h3>
-          <p style="font-size: 13px; color: #888;">Você já adicionou ${count} leads hoje. Sua cota diária é de 15 leads. Volte amanhã!</p>
-        </div>
-      `;
-      return; // Para a função aqui e não faz a busca no Google Maps
+      showToast('⚠️ Limite de 15 pesquisas diárias atingido!');
+      return;
     }
-  } catch (err) {
-    console.error("Erro ao verificar limite:", err);
-  }
-  // --- FIM DA TRAVA ---
 
-  var cat=document.getElementById('scraperCat').value;
-  var city=document.getElementById('scraperCity').value.trim();
-  var bairro=document.getElementById('scraperBairro').value.trim();
-  var limit=parseInt(document.getElementById('scraperLimit').value);
+    // 2. REGISTRA QUE UMA BUSCA FOI FEITA (Consome cota aqui)
+    await sb.from('logs_buscas').insert({ user_id: currentUser.id });
 
-  if(!cat || !city){
-    showToast('Preencha segmento e cidade!');
-    return;
-  }
+  } catch (err) { console.error(err); }
 
-  document.getElementById('scraperBtnText').textContent='Buscando...';
-  document.getElementById('scraperBtn').disabled=true;
-  document.getElementById('scraperProgress').style.display='block';
-  document.getElementById('scraperResults').innerHTML='';
-  document.getElementById('scraperStatus').textContent='Buscando leads...';
-  document.getElementById('scraperBar').style.width='30%';
+  // Restante das variáveis...
+  var cat = document.getElementById('scraperCat').value;
+  var city = document.getElementById('scraperCity').value.trim();
+  var bairro = document.getElementById('scraperBairro').value.trim();
+  var limit = parseInt(document.getElementById('scraperLimit').value);
 
-  try{
+  if (!cat || !city) { showToast('Preencha segmento e cidade!'); return; }
+
+  // Interface de busca...
+  document.getElementById('scraperBtnText').textContent = 'Buscando...';
+  document.getElementById('scraperBtn').disabled = true;
+  document.getElementById('scraperProgress').style.display = 'block';
+  document.getElementById('scraperResults').innerHTML = '';
+
+  try {
     const res = await fetch('/api/scraper', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -842,39 +829,33 @@ async function runScraper(){
     });
 
     const data = await res.json();
+    if (!data || !data.results) throw new Error('Resposta inválida');
 
-    if(!data || !data.results){
-      throw new Error('Resposta inválida');
-    }
+    // --- PRIORIZAR RESULTADOS COM WHATSAPP/TELEFONE ---
+    // Movemos quem tem telefone para o início da lista
+    const resultadosOrdenados = data.results.sort((a, b) => {
+      const temA = (a.phone || a.phoneNumber) ? 1 : 0;
+      const temB = (b.phone || b.phoneNumber) ? 1 : 0;
+      return temB - temA; // Quem tem 1 (telefone) sobe
+    });
 
-    document.getElementById('scraperBar').style.width='100%';
-    document.getElementById('scraperStatus').textContent=data.results.length+' leads encontrados!';
+    document.getElementById('scraperBar').style.width = '100%';
+    document.getElementById('scraperStatus').textContent = resultadosOrdenados.length + ' leads encontrados!';
+    document.getElementById('scraperBtn').disabled = false;
+    document.getElementById('scraperBtnText').textContent = 'Buscar Leads';
 
-    document.getElementById('scraperBtn').disabled=false;
-    document.getElementById('scraperBtnText').textContent='Buscar Leads';
-
-    if(!data.results.length){
-      document.getElementById('scraperResults').innerHTML =
-        '<div class="empty-state">Nenhum resultado encontrado</div>';
-      return;
-    }
-
-    data.results.forEach(function(item){
+    resultadosOrdenados.forEach(function(item) {
       appendResult(item);
     });
 
-    showToast(data.results.length+' leads encontrados!');
+    showToast('Busca concluída!');
 
-  }catch(e){
-    console.error(e);
-    showToast('Erro ao buscar leads');
-
-    document.getElementById('scraperBtn').disabled=false;
-    document.getElementById('scraperBtnText').textContent='Buscar Leads';
-    document.getElementById('scraperProgress').style.display='none';
+  } catch (e) {
+    showToast('Erro na busca');
+    document.getElementById('scraperBtn').disabled = false;
+    document.getElementById('scraperBtnText').textContent = 'Buscar Leads';
   }
 }
-
 async function pollRun(runId, key){
   var maxAttempts = 60;
   var attempts = 0;
