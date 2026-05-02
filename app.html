@@ -1026,5 +1026,20 @@ function exportCSV(){
   showToast('CSV exportado!');
 }
 </script>
+  <div class="modal-overlay" id="profileModal">
+  <div class="modal" style="max-width: 350px; margin: auto;">
+    <div class="modal-title">Meu Perfil</div>
+    <div class="input-group">
+      <label class="input-label">Nome de Exibição</label>
+      <input class="inp" id="profileName" placeholder="Ex: Cauã Diniz">
+    </div>
+    <div class="input-group">
+      <label class="input-label">URL da Foto</label>
+      <input class="inp" id="profileAvatar" placeholder="Link da imagem">
+    </div>
+    <button class="btn btn-gold" onclick="saveProfile()">Salvar</button>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="document.getElementById('profileModal').classList.remove('open')">Fechar</button>
+  </div>
+</div>
 </body>
 </html>
