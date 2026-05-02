@@ -174,6 +174,17 @@ body{
 const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  // Detecta se o usuário clicou no link de recuperação de senha
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === "PASSWORD_RECOVERY") {
+    const novaSenha = prompt("Digite sua nova senha (mínimo 6 caracteres):");
+    if (novaSenha && novaSenha.length >= 6) {
+      const { error } = await sb.auth.updateUser({ password: novaSenha });
+      if (error) alert("Erro ao atualizar: " + error.message);
+      else alert("Senha atualizada com sucesso! Já pode logar.");
+    }
+  }
+});
 
 function showMsg(text, type){
   var el = document.getElementById('msg');
