@@ -117,27 +117,27 @@ body{
     <div class="logo-line"></div>
     <div class="logo-sub">Prospectador Comercial</div>
   </div>
-
   <div class="card">
     <div class="card-title" id="formTitle">Acesso Restrito</div>
+code
+Code
+<div class="msg" id="msg"></div>
 
-    <div class="msg" id="msg"></div>
-
-    <div id="loginForm">
-      <div class="input-group">
-        <label class="input-label">Email</label>
-        <input class="inp" type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
-      </div>
-      <div class="input-group">
-        <label class="input-label">Senha</label>
-        <input class="inp" type="password" id="loginPass" placeholder="Sua senha" autocomplete="current-password">
-      </div>
-      <button class="btn btn-gold" id="loginBtn" onclick="doLogin()">
-        Entrar
-      </button>
-      <div style="margin-top: 20px; text-align: center;">
-    <span style="color: #888; font-size: 0.9em;">Ainda não tem acesso?</span>
-    <a href="/cadastro.html" style="color: #D4AF37; text-decoration: none; font-weight: bold; margin-left: 5px; display: inline-block;">Solicitar Cadastro</a>
+<div id="loginForm">
+  <div class="input-group">
+    <label class="input-label">Email</label>
+    <input class="inp" type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
+  </div>
+  <div class="input-group">
+    <label class="input-label">Senha</label>
+    <input class="inp" type="password" id="loginPass" placeholder="Sua senha" autocomplete="current-password">
+  </div>
+  <button class="btn btn-gold" id="loginBtn" onclick="doLogin()">
+    Entrar
+  </button>
+  <div style="margin-top: 20px; text-align: center;">
+<span style="color: #888; font-size: 0.9em;">Ainda não tem acesso?</span>
+<a href="/cadastro.html" style="color: #D4AF37; text-decoration: none; font-weight: bold; margin-left: 5px; display: inline-block;">Solicitar Cadastro</a>
 </div>
       <div class="divider">
         <div class="divider-line"></div>
@@ -146,57 +146,58 @@ body{
       </div>
       <button class="link-btn" onclick="showForgot()">Esqueci minha senha</button>
     </div>
-
-    <div id="forgotForm" style="display:none">
-      <div class="input-group">
-        <label class="input-label">Email</label>
-        <input class="inp" type="email" id="forgotEmail" placeholder="seu@email.com">
-      </div>
-      <button class="btn btn-gold" id="forgotBtn" onclick="doForgot()">
-        Enviar link de recuperação
-      </button>
-      <div class="divider">
-        <div class="divider-line"></div>
-        <div class="divider-text">ou</div>
-        <div class="divider-line"></div>
-      </div>
-      <button class="link-btn" onclick="showLogin()">Voltar ao login</button>
-    </div>
+code
+Code
+<div id="forgotForm" style="display:none">
+  <div class="input-group">
+    <label class="input-label">Email</label>
+    <input class="inp" type="email" id="forgotEmail" placeholder="seu@email.com">
   </div>
-
+  <button class="btn btn-gold" id="forgotBtn" onclick="doForgot()">
+    Enviar link de recuperação
+  </button>
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-text">ou</div>
+    <div class="divider-line"></div>
+  </div>
+  <button class="link-btn" onclick="showLogin()">Voltar ao login</button>
+</div>
+  </div>
   <div class="footer-text">
     Acesso exclusivo para equipe Orus Company
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-// GERENCIADOR DE ESTADO ÚNICO
+  // Detecta se o usuário clicou no link de recuperação de senha
 sb.auth.onAuthStateChange((event, session) => {
+  // Caso 1: O usuário clicou no link de recuperação de senha do e-mail
   if (event === "PASSWORD_RECOVERY") {
+    console.log("Recuperação detectada, redirecionando...");
     window.location.href = "recovery.html";
     return;
   }
 
-  if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-     // Só redireciona se NÃO for uma recuperação de senha escondida na URL
-     if (!window.location.hash.includes("type=recovery")) {
-        window.location.href = "app.html";
-     }
+  // Caso 2: Login normal (Só redireciona se não for evento de recuperação)
+  if (session && event === "SIGNED_IN") {
+    // Pequena verificação extra na URL para ter certeza que não é recuperação
+    if (!window.location.hash.includes("type=recovery")) {
+      window.location.href = "app.html";
+    } else {
+      window.location.href = "recovery.html";
+    }
   }
 });
-
 function showMsg(text, type){
   var el = document.getElementById('msg');
   el.textContent = text;
   el.className = 'msg ' + type;
   el.style.display = 'block';
 }
-
 function hideMsg(){ document.getElementById('msg').style.display = 'none'; }
 
 function setLoading(btnId, loading){
@@ -206,7 +207,6 @@ function setLoading(btnId, loading){
     btn.innerHTML = '<div class="spinner"></div>';
   } else {
     btn.disabled = false;
-    btn.innerHTML = btnId === 'loginBtn' ? 'Entrar' : 'Enviar link de recuperação';
   }
 }
 
@@ -219,17 +219,25 @@ async function doLogin(){
   var { error } = await sb.auth.signInWithPassword({ email, password: pass });
   if(error){
     setLoading('loginBtn', false);
+    document.getElementById('loginBtn').innerHTML = 'Entrar';
     showMsg('Email ou senha incorretos.', 'error');
+  } else {
+    document.getElementById('loginBtn').innerHTML = 'Redirecionando...';
+    window.location.href = 'app.html';
   }
 }
 
 async function doForgot(){
   var email = document.getElementById('forgotEmail').value.trim();
   if(!email) return showMsg('Digite seu email.', 'error');
+  
   setLoading('forgotBtn', true);
+  
+  // CORREÇÃO AQUI: O link deve apontar para o recovery.html
   const { error } = await sb.auth.resetPasswordForEmail(email, {
     redirectTo: 'https://orus-prospect.vercel.app/recovery.html',
   });
+
   setLoading('forgotBtn', false);
   if(error) showMsg('Erro ao enviar e-mail.', 'error');
   else showMsg('E-mail enviado! Verifique sua caixa de entrada.', 'success');
@@ -239,13 +247,26 @@ function showForgot(){
   document.getElementById('loginForm').style.display = 'none';
   document.getElementById('forgotForm').style.display = 'block';
   document.getElementById('formTitle').textContent = 'Recuperar Senha';
+  hideMsg();
 }
-
 function showLogin(){
   document.getElementById('loginForm').style.display = 'block';
   document.getElementById('forgotForm').style.display = 'none';
   document.getElementById('formTitle').textContent = 'Acesso Restrito';
+  hideMsg();
 }
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){
+    var ff = document.getElementById('forgotForm');
+    if(ff.style.display === 'block') doForgot();
+    else doLogin();
+  }
+});
+
+sb.auth.getSession().then(function({ data }){
+  if(data.session) window.location.href = 'app.html';
+});
 </script>
 </body>
 </html>
