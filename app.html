@@ -290,49 +290,62 @@ async function saveProfile() {
 
 // --- PESQUISA COM LIMITE DE 25 ---
 async function runSearch() {
-  const isAdmin = ADMIN_EMAILS.includes(currentUser.email);
+  const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   const hoje = new Date().toISOString().split('T')[0];
 
-  // Bypass para você e Suelem
+  // Bypass para Admins (Cauã e Suelem)
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 25) { alert('Cota de 25 leads diários esgotada!'); return; }
+    if (count >= 25) { 
+      showToast('⚠️ Limite diário de 25 leads atingido!'); 
+      return; 
+    }
   }
 
   const btn = document.getElementById('btnSearch');
   btn.disabled = true; btn.innerText = 'Buscando...';
 
-  const apiChoice = document.getElementById('apiChoice').value;
-  const loc = document.getElementById('srcLoc').value;
-  const seg = document.getElementById('srcSeg').value || document.getElementById('srcNicho').value;
-  const limit = parseInt(document.getElementById('srcLimit').value);
+  // Coleta todos os filtros
+  const payload = {
+    apiChoice: document.getElementById('apiChoice').value,
+    loc: document.getElementById('srcLoc').value, // Campo de localização
+    seg: document.getElementById('srcSeg').value || document.getElementById('srcNicho').value,
+    limit: parseInt(document.getElementById('srcLimit').value),
+    user_id: currentUser.id
+  };
+
+  if (!payload.loc || !payload.seg) {
+    alert("Por favor, preencha a Localização e o Segmento.");
+    btn.disabled = false; btn.innerText = 'Buscar Prospectos';
+    return;
+  }
 
   try {
-    let response;
-    if (apiChoice === 'apify') {
-        // Sua chamada atual do Apify
-        response = await fetch('/api/scraper', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ location: loc, segment: seg, limit: limit, user_id: currentUser.id })
-        });
-    } else {
-        // Chamada de emergência para Scrape.do
-        response = await fetch(`/api/scrapedoproxy?q=${seg}+em+${loc}&limit=${limit}`);
-    }
-    
-    const data = await response.json();
-    
-    // Só consome o log de limite se não for Admin
-    if (!isAdmin) {
-       for(let i=0; i < data.results.length; i++) {
-         await sb.from('logs_buscas').insert({ user_id: currentUser.id });
-       }
-    }
+    // Chamada para o seu "Túnel Seguro" na Vercel
+    const response = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-    renderResults(data.results);
+    const data = await response.json();
+
+    if (!data.results || data.results.length === 0) {
+      alert("Nenhum resultado encontrado para esta busca.");
+    } else {
+      // Registra no log do Supabase (apenas para funcionários)
+      if (!isAdmin) {
+        for (let i = 0; i < data.results.length; i++) {
+          await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+        }
+      }
+      // Mostra os resultados na tela
+      renderResults(data.results);
+      showToast("Busca concluída!");
+    }
   } catch (e) {
-    alert('Erro na busca.');
+    console.error(e);
+    alert('Erro na conexão com o servidor de busca.');
   }
   btn.disabled = false; btn.innerText = 'Buscar Prospectos';
 }
