@@ -320,19 +320,18 @@ async function runSearch() {
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
     if (count >= 25) { 
-        showToast("⚠️ Limite diário atingido!"); 
+        showToast("⚠️ Limite diário de 25 leads atingido!"); 
         return; 
     }
   }
 
   const btn = document.getElementById('btnSearch');
-  const resultsDiv = document.getElementById('scraperResults'); // Garanta que esse ID existe
+  const resultsDiv = document.getElementById('scraperResults');
   
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
-  resultsDiv.innerHTML = '<p style="text-align:center; color:var(--gold); padding:20px;">Iniciando busca nos servidores da Google... isso pode levar 10 segundos.</p>';
+  resultsDiv.innerHTML = ''; // Limpa resultados anteriores sem mensagens chatas
 
-  // ... (resto do código com o fetch para /api/search) ...
   const payload = {
     apiChoice: document.getElementById('apiChoice').value,
     loc: document.getElementById('srcLoc').value,
@@ -349,28 +348,27 @@ async function runSearch() {
 
     const data = await response.json();
 
-    if (response.ok) {
+    if (response.ok && data.results && data.results.length > 0) {
       lastResults = data.results;
-      if (lastResults.length === 0) {
-          showToast("Nenhum lead encontrado.");
-      } else {
-          // Registra o uso no limite apenas se não for Admin
-          if (!isAdmin) {
-            for(let i=0; i < lastResults.length; i++) {
-              await sb.from('logs_buscas').insert({ user_id: currentUser.id });
-            }
-          }
-          renderResults(data.results);
-          showToast(`Sucesso! ${lastResults.length} leads encontrados.`);
+      
+      if (!isAdmin) {
+        // Registra cada lead encontrado no limite diário
+        for(let i=0; i < lastResults.length; i++) {
+          await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+        }
       }
+
+      renderResults(data.results);
+      showToast(`${data.results.length} leads encontrados!`);
     } else {
-      showToast("Erro no Servidor: " + data.error);
+      resultsDiv.innerHTML = `<p style="text-align:center; color:#888; padding:20px;">Nenhum lead encontrado ou a busca falhou. Tente mudar o segmento ou diminuir a quantidade de leads.</p>`;
+      showToast("Busca sem resultados.");
     }
   } catch (e) {
-    showToast("Erro de conexão. Tente novamente.");
+    showToast("Erro: O servidor de busca está sobrecarregado.");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = 'BUSCAR LEADS';
+    btn.innerHTML = 'BUSCAR PROSPECTOS';
   }
 }
   
