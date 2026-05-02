@@ -76,14 +76,14 @@ async function runSearch() {
       let results = [];
       if (selectedApi === 'apify') {
           // Chamada Apify (Substitua pela sua lógica de Actor)
-          const response = await fetch(`https://api.apify.com/v2/acts/apify~google-maps-scraper/runs?token=${apify_api_rJreP1C0C220b2bduxW65fZmRYJFYm44nTHL}`, {
+          const response = await fetch(`https://api.apify.com/v2/acts/apify~google-maps-scraper/runs?token=${APIFY_TOKEN}`, {
               method: 'POST', body: JSON.stringify({ queries: [`${seg} em ${loc}`], maxQueries: 1, limitPerQuery: parseInt(limit) })
           });
           // Nota: Apify requer polling (esperar o resultado), use sua rota /api/scraper se preferir
       } else {
           // Chamada Scrape.do (Simples Google Search)
           const targetUrl = encodeURIComponent(`https://www.google.com/search?q=${seg}+em+${loc}`);
-          const res = await fetch(`https://api.scrape.do?token=${129e6ddede1d43f4b10f72100c8921258a8b5445610}&url=${targetUrl}`);
+          const res = await fetch(`https://api.scrape.do?token=${SCRAPEDO_TOKEN}&url=${targetUrl}`);
           // Scrape.do retorna HTML bruto, você precisaria processar ou usar o modo "Google Search API" deles.
       }
 
