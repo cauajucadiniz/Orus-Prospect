@@ -128,9 +128,11 @@ sb.auth.getSession().then(({ data }) => {
 });
 
 async function runSearch() {
-    const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+    const userEmail = currentUser.email.toLowerCase();
+    const isAdmin = ADMIN_EMAILS.includes(userEmail);
     const hoje = new Date().toISOString().split('T')[0];
 
+    // BYPASS ADMIN: Se for você ou Suelem, não checa nem grava limite
     if (!isAdmin) {
         const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
         if (count >= 25) return showToast("🚫 Limite diário atingido!");
@@ -141,17 +143,16 @@ async function runSearch() {
     
     btn.disabled = true; 
     btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
-    resultsDiv.innerHTML = '<p style="text-align:center; color:var(--gold); padding:20px;">O Robô Orus está minerando o Google Maps... aguarde.</p>';
+    resultsDiv.innerHTML = ''; 
 
     const payload = { 
         apiChoice: document.getElementById('apiChoice').value, 
         loc: document.getElementById('srcLoc').value, 
-        seg: document.getElementById('srcSeg').value, 
+        seg: document.getElementById('srcSeg').value || document.getElementById('srcNicho').value, 
         limit: document.getElementById('srcLimit').value 
     };
 
     try {
-        // ATENÇÃO: O NOME AQUI DEVE SER 'swift-task'
         const { data, error } = await sb.functions.invoke('swift-task', { body: payload });
         
         if (error) throw error;
@@ -160,19 +161,19 @@ async function runSearch() {
             lastResults = data.results;
             renderResults(data.results);
             
+            // Só grava no log se NÃO for admin
             if (!isAdmin) {
                 for (let i=0; i < lastResults.length; i++) {
                     await sb.from('logs_buscas').insert({ user_id: currentUser.id });
                 }
             }
-            showToast(`${lastResults.length} leads carregados!`);
+            showToast(`${lastResults.length} prospectos encontrados!`);
         } else {
-            resultsDiv.innerHTML = '<p style="text-align:center; color:#888;">Nenhum resultado encontrado.</p>';
+            resultsDiv.innerHTML = '<p style="text-align:center; color:#888; padding:20px;">Nenhum resultado encontrado. Tente ser mais específico na localização.</p>';
         }
     } catch (e) { 
-        console.error("Erro na busca:", e);
-        showToast("Erro na busca. Verifique os logs no Supabase.");
-        resultsDiv.innerHTML = '<p style="text-align:center; color:var(--red);">Falha na conexão com o robô.</p>';
+        showToast("Erro na busca. Tente mudar o serviço de busca.");
+        resultsDiv.innerHTML = '<p style="text-align:center; color:var(--red); padding:20px;">Falha na conexão com o robô.</p>';
     } finally {
         btn.disabled = false; 
         btn.innerHTML = "BUSCAR PROSPECTOS";
@@ -209,21 +210,38 @@ async function addAllToCRM() {
 }
 
 async function loadData() {
-    const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
-    if (!data) return;
-    const stats = { novo: data.filter(l => l.status === 'novo').length, abordado: data.filter(l => l.status === 'abordado').length, agendado: data.filter(l => l.status === 'agendado').length, fechado: data.filter(l => l.status === 'fechado').length };
-    
-    ['novo', 'abordado', 'agendado', 'fechado'].forEach(id => { if(document.getElementById('dash-'+id)) document.getElementById('dash-'+id).innerText = stats[id]; });
+  const { data, error } = await sb.from('leads').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  if (error || !data) return;
 
-    const hoje = new Date().toISOString().split('T')[0];
-    const hojeAbordados = data.filter(l => l.status === 'abordado' && l.created_at.startsWith(hoje)).length;
-    document.getElementById('progText').innerText = `${hojeAbordados}/10`;
-    document.getElementById('progFill').style.width = Math.min((hojeAbordados/10)*100, 100) + '%';
-    
-    const total = data.length || 1;
-    document.getElementById('c-agendamento').innerText = Math.round((stats.agendado/total)*100) + '%';
-    document.getElementById('c-fechamento').innerText = Math.round((stats.fechado/total)*100) + '%';
-    document.getElementById('recentLeads').innerHTML = data.slice(0, 3).map(l => `<div class="card" style="font-size:11px;"><b>${l.name}</b></div>`).join('');
+  const stats = {
+    novo: data.filter(l => l.status === 'novo').length,
+    abordado: data.filter(l => l.status === 'abordado').length,
+    agendado: data.filter(l => l.status === 'agendado').length,
+    fechado: data.filter(l => l.status === 'fechado').length
+  };
+
+  // Atualiza contadores
+  const setEl = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
+  setEl('dash-novo', stats.novo);
+  setEl('dash-abordado', stats.abordado);
+  setEl('dash-agendado', stats.agendado);
+  setEl('dash-fechado', stats.fechado);
+
+  // Meta 10 abordagens hoje
+  const hoje = new Date().toISOString().split('T')[0];
+  const hojeAbordados = data.filter(l => l.status === 'abordado' && l.created_at.startsWith(hoje)).length;
+  setEl('progText', `${hojeAbordados} / 10`);
+  if(document.getElementById('progFill')) document.getElementById('progFill').style.width = Math.min((hojeAbordados / 10) * 100, 100) + '%';
+
+  // Atividade Recente
+  const recentContainer = document.getElementById('recentLeads');
+  if (recentContainer) {
+    recentContainer.innerHTML = data.slice(0, 3).map(l => `
+      <div class="card" style="padding:10px; font-size:12px; margin-bottom:5px; border-left:3px solid var(--gold);">
+        <b>${l.name}</b> adicionado ao CRM.
+      </div>
+    `).join('');
+  }
 }
 
 async function renderLeads() {
