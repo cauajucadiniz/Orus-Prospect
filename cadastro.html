@@ -33,8 +33,16 @@
                     <input type="email" id="email" placeholder="seu@email.com" required>
                 </div>
                 <div class="input-group">
+                    <label>Confirmar E-mail</label>
+                    <input type="email" id="confirm_email" placeholder="Confirme seu e-mail" required>
+                </div>
+                <div class="input-group">
                     <label>Senha de Acesso</label>
                     <input type="password" id="password" placeholder="Mínimo 6 caracteres" required>
+                </div>
+                <div class="input-group">
+                    <label>Confirmar Senha</label>
+                    <input type="password" id="confirm_password" placeholder="Confirme sua senha" required>
                 </div>
                 <button type="submit" id="btn-submit">Finalizar e Ativar</button>
             </form>
@@ -70,7 +78,26 @@
             btn.innerText = "Processando...";
             
             const email = document.getElementById('email').value;
+            const confirmEmail = document.getElementById('confirm_email').value;
             const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            // VALIDAÇÃO DE IGUALDADE
+            if (email !== confirmEmail) {
+                msg.style.color = "#ff4444";
+                msg.innerText = "Erro: Os e-mails digitados não são iguais.";
+                btn.disabled = false;
+                btn.innerText = "Finalizar e Ativar";
+                return; // Para a execução aqui
+            }
+
+            if (password !== confirmPassword) {
+                msg.style.color = "#ff4444";
+                msg.innerText = "Erro: As senhas digitadas não são iguais.";
+                btn.disabled = false;
+                btn.innerText = "Finalizar e Ativar";
+                return; // Para a execução aqui
+            }
 
             // Criar usuário no Supabase
             const { data, error } = await _supabase.auth.signUp({
