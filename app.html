@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ORUS - CRM</title>
+<title>ORUS - CRM Prospectador</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+/* --- ESTILOS GERAIS --- */
 :root {
   --gold: #C9A84C; --gold-light: #E8C97A; --black: #0A0A0A; --dark: #111; 
   --card: #181818; --border: #2A2A2A; --text: #F0EDE8; --text-muted: #8A8580;
@@ -15,9 +16,10 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
+/* Navegação e Topbar */
 .topbar { background: var(--dark); border-bottom: 1px solid var(--gold); padding: 0 16px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
 .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--gold); letter-spacing: 3px; }
-.user-badge { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--gold); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #1a1a1a; }
+.user-badge { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--gold); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #1a1a1a; font-weight: bold; color: var(--gold); }
 .user-badge img { width: 100%; height: 100%; object-fit: cover; }
 
 .nav { display: flex; background: var(--dark); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
@@ -27,18 +29,46 @@ body { background: var(--black); color: var(--text); font-family: 'DM Sans', san
 .page { display: none; padding: 20px; padding-bottom: 100px; }
 .page.active { display: block; }
 
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; transition: 0.3s; }
-.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--gold); margin-bottom: 15px; text-transform: uppercase; }
+/* Elementos de UI */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--gold); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+.inp { width: 100%; background: #1a1a1a; border: 1px solid var(--border); padding: 12px; color: #fff; border-radius: 8px; margin-bottom: 12px; outline: none; font-family: inherit; }
+.btn-gold { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+.btn-gold:active { transform: scale(0.98); }
 
-.inp { width: 100%; background: #1a1a1a; border: 1px solid var(--border); padding: 12px; color: #fff; border-radius: 8px; margin-bottom: 12px; outline: none; }
-.btn-gold { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.btn-gold:disabled { opacity: 0.6; cursor: not-allowed; }
+/* Relatório / Funil */
+.funnel-bar { height: 44px; border-radius: 8px; display: flex; align-items: center; padding: 0 14px; margin-bottom: 8px; font-size: 12px; font-weight: 600; justify-content: space-between; }
 
-.spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* Modal Perfil */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
 
-.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--gold); color: #000; padding: 12px 25px; border-radius: 30px; font-size: 12px; font-weight: bold; z-index: 9999; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* Filtros Search */
+.radius-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+.radio-chip { display: none; }
+.radio-label { display: block; padding: 10px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 11px; cursor: pointer; }
+.radio-chip:checked + .radio-label { background: var(--gold); color: var(--black); border-color: var(--gold); }
+  /* Animação de Carregamento (Spinner) */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000; /* Cor do topo do giro */
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Estilo para botão desativado */
+.btn-gold:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
 </style>
 </head>
 <body>
@@ -64,16 +94,30 @@ body { background: var(--black); color: var(--text); font-family: 'DM Sans', san
 <div class="page active" id="page-dashboard">
   <div style="margin-bottom: 20px;">
     <span style="font-size: 10px; color: var(--text-muted);">BOM TRABALHO,</span>
-    <h1 id="userNameDisp" style="font-size: 24px;">...</h1>
+    <h1 id="userNameDisp" style="font-size: 24px;">Carregando...</h1>
   </div>
 
+  <!-- Novos Contadores do Dashboard -->
   <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-    <div class="card" style="text-align:center; border-left: 4px solid var(--blue);"><div style="font-size:24px; font-family:'Bebas Neue';" id="dash-novo">0</div><div style="font-size:9px; color:var(--blue);">NOVOS</div></div>
-    <div class="card" style="text-align:center; border-left: 4px solid var(--orange);"><div style="font-size:24px; font-family:'Bebas Neue';" id="dash-abordado">0</div><div style="font-size:9px; color:var(--orange);">ABORDADOS</div></div>
-    <div class="card" style="text-align:center; border-left: 4px solid var(--gold);"><div style="font-size:24px; font-family:'Bebas Neue';" id="dash-agendado">0</div><div style="font-size:9px; color:var(--gold);">AGENDADOS</div></div>
-    <div class="card" style="text-align:center; border-left: 4px solid var(--green);"><div style="font-size:24px; font-family:'Bebas Neue';" id="dash-fechado">0</div><div style="font-size:9px; color:var(--green);">FECHADOS</div></div>
+    <div class="card" style="text-align:center; border-left: 3px solid var(--blue);">
+      <div style="font-size:24px; font-family:'Bebas Neue';" id="dash-novo">0</div>
+      <div style="font-size:9px; color:var(--text-muted);">NOVOS</div>
+    </div>
+    <div class="card" style="text-align:center; border-left: 3px solid var(--orange);">
+      <div style="font-size:24px; font-family:'Bebas Neue';" id="dash-abordado">0</div>
+      <div style="font-size:9px; color:var(--text-muted);">ABORDADOS</div>
+    </div>
+    <div class="card" style="text-align:center; border-left: 3px solid var(--gold);">
+      <div style="font-size:24px; font-family:'Bebas Neue';" id="dash-agendado">0</div>
+      <div style="font-size:9px; color:var(--text-muted);">AGENDADOS</div>
+    </div>
+    <div class="card" style="text-align:center; border-left: 3px solid var(--green);">
+      <div style="font-size:24px; font-family:'Bebas Neue';" id="dash-fechado">0</div>
+      <div style="font-size:9px; color:var(--text-muted);">FECHADOS</div>
+    </div>
   </div>
 
+  <!-- Barra de Meta Diária -->
   <div class="card" style="margin-top:10px;">
     <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px;">
       <span>META DIÁRIA (10 ABORDAGENS)</span>
@@ -87,24 +131,35 @@ body { background: var(--black); color: var(--text); font-family: 'DM Sans', san
   <h2 class="section-title" style="margin-top:20px;">Atividade Recente</h2>
   <div id="recentLeads"></div>
 </div>
+<!-- LEADS -->
+<div class="page" id="page-leads">
+    <input class="inp" id="searchLeads" placeholder="Buscar nos meus leads..." oninput="renderLeads()">
+    <div id="leadsList"></div>
+</div>
 
-<!-- ORUSSEARCH -->
+<!-- ORUSSEARCH (FILTROS COMPLETOS) -->
 <div class="page" id="page-scraper">
+  <!-- Aviso de Limite -->
   <div style="background:rgba(201,168,76,0.1); border:1px solid var(--gold); padding:10px; border-radius:8px; margin-bottom:15px; font-size:11px; color:var(--gold); text-align:center;">
-    ⚠️ AVISO: Limite diário de 25 resultados de busca por conta.
+    ⚠️ Limite diário: 25 resultados de busca por conta.
   </div>
   
-  <div class="card">
-    <label style="font-size:10px; color:var(--gold);">LOCALIZAÇÃO (CIDADE, BAIRRO OU ESTADO)</label>
-    <input class="inp" id="srcLoc" placeholder="Ex: Aldeota, Fortaleza, CE">
+  <div class="filter-group">
+  <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">LOCALIZAÇÃO (CIDADE, BAIRRO OU ESTADO)</label>
+  <input class="inp" id="srcLoc" placeholder="Ex: Aldeota, Fortaleza, CE" required>
+</div>
 
-    <label style="font-size:10px; color:var(--gold);">SERVIÇO DE BUSCA</label>
+  <div class="card">
+    <h2 class="section-title">Filtros de Busca</h2>
+    
+    <!-- Adicione isso antes do botão Buscar -->
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">SERVIÇO DE BUSCA (REDUTOR DE CUSTOS)</label>
     <select class="inp" id="apiChoice">
       <option value="apify">Apify (Google Maps - Recomendado)</option>
       <option value="scrapedo">Scrape.do (Google Search - Alternativo)</option>
     </select>
 
-    <label style="font-size:10px; color:var(--gold);">SEGMENTO</label>
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">SEGMENTO DE NEGÓCIO</label>
     <select class="inp" id="srcSeg">
         <option value="">Selecione um segmento...</option>
         <option>Restaurantes e Alimentação</option>
@@ -113,97 +168,131 @@ body { background: var(--black); color: var(--text); font-family: 'DM Sans', san
         <option>Academias e Personal Trainer</option>
         <option>Imobiliárias e Corretores</option>
         <option>Advocacia e Jurídico</option>
+        <option>Contabilidade</option>
         <option>Odontologia</option>
+        <option>Psicologia e Terapia</option>
+        <option>Educação e Cursos</option>
+        <option>Automóveis e Concessionárias</option>
+        <option>Eventos e Festas</option>
+        <option>Moda e Vestuário</option>
+        <option>Tecnologia e TI</option>
+        <option>Construção e Reformas</option>
         <option value="outro">Outro (campo livre)</option>
     </select>
     <input class="inp" id="srcNicho" placeholder="Ou digite um nicho específico...">
 
-    <label style="font-size:10px; color:var(--gold);">RESULTADOS</label>
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">QUANTIDADE DE RESULTADOS</label>
     <select class="inp" id="srcLimit">
         <option value="5">5 leads</option>
+        <option value="10">10 leads</option>
         <option value="15">15 leads</option>
-        <option value="25" selected>25 leads (Máximo)</option>
+        <option value="20">20 leads</option>
+        <option value="25" selected>25 leads (Limite Máximo)</option>
     </select>
 
-    <button class="btn-gold" id="btnSearch" onclick="runSearch()">Buscar Prospectos</button>
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">TIPO DE NEGÓCIO</label>
+    <div style="display:flex; gap:15px; font-size:12px; margin-bottom:15px;">
+        <label><input type="radio" name="bizType" value="company"> Empresa/CNPJ</label>
+        <label><input type="radio" name="bizType" value="pro"> Profissional Autônomo</label>
+        <label><input type="radio" name="bizType" value="both" checked> Ambos</label>
+    </div>
+
+    <button class="btn-gold" id="btnSearch" onclick="runSearch()">Buscar Leads </button>
   </div>
   <div id="scraperResults"></div>
 </div>
 
-<!-- LEADS -->
-<div class="page" id="page-leads">
-    <div id="leadsList"></div>
-</div>
-
-<!-- RELATORIO -->
+<!-- RELATÓRIO -->
 <div class="page" id="page-relatorio">
-    <h2 class="section-title">Funil Completo</h2>
-    <div id="relatorioContent"></div>
-    <button class="btn-gold" onclick="exportCSV()" style="margin-top:20px;">Exportar para Excel</button>
+    <h2 class="section-title">Funil de Prospecção</h2>
+    <div class="card">
+        <div class="funnel-bar" style="background:rgba(52,152,219,0.15); color:var(--blue);"><span>Novos</span><span id="f-novo">0</span></div>
+        <div class="funnel-bar" style="background:rgba(230,126,34,0.15); color:var(--orange);"><span>Abordados</span><span id="f-abordado">0</span></div>
+        <div class="funnel-bar" style="background:rgba(201,168,76,0.15); color:var(--gold);"><span>Agendados</span><span id="f-agendado">0</span></div>
+        <div class="funnel-bar" style="background:rgba(46,204,113,0.15); color:var(--green);"><span>Fechados</span><span id="f-fechado">0</span></div>
+        <div class="funnel-bar" style="background:rgba(231,76,60,0.15); color:var(--red);"><span>Sem Resposta</span><span id="f-sem">0</span></div>
+    </div>
+
+    <h2 class="section-title">Conversão</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="card" style="text-align:center;"><div style="font-size:24px; color:var(--gold);" id="c-agendamento">0%</div><div style="font-size:9px;">TAXA AGENDAMENTO</div></div>
+        <div class="card" style="text-align:center;"><div style="font-size:24px; color:var(--gold);" id="c-fechamento">0%</div><div style="font-size:9px;">TAXA FECHAMENTO</div></div>
+    </div>
+
+    <h2 class="section-title" style="margin-top:20px;">Exportar</h2>
+    <div class="card">
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Exporte todos os seus leads em CSV para Excel.</p>
+        <button class="btn-gold" onclick="exportCSV()">Exportar CSV</button>
+    </div>
 </div>
 
-<!-- MODAL PERFIL -->
+<!-- MODAL PERFIL (UPLOAD) -->
 <div class="modal-overlay" id="profileModal">
-  <div class="modal" style="background:#111; padding:25px; border:1px solid var(--gold); border-radius:15px; width:100%; max-width:350px;">
-    <h2 class="section-title">Meu Perfil</h2>
-    <div style="background:#222; padding:10px; border-radius:8px; border-left:3px solid var(--gold); margin-bottom:15px;">
-        <span style="font-size:9px; color:var(--text-muted);">E-MAIL LOGADO:</span>
-        <div id="displayUserEmail" style="font-size:12px; font-weight:bold;">...</div>
-    </div>
+  <div class="modal">
+    <h2 class="section-title">Editar Perfil</h2>
     <input class="inp" id="newName" placeholder="Nome de Exibição">
-    <button class="btn-gold" onclick="saveProfile()" id="btnSaveProfile" style="font-size:10px;">SALVAR ALTERAÇÕES</button>
-    <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#555; margin-top:15px; cursor:pointer; font-size:10px;">CANCELAR</button>
+    
+    <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+      <div class="user-badge" style="width:60px; height:60px;" id="previewAvatar">?</div>
+      <input type="file" id="fileAvatar" accept="image/*" style="display:none" onchange="previewFile()">
+      <button onclick="document.getElementById('fileAvatar').click()" style="padding:10px; background:#222; border:1px solid var(--gold); color:var(--gold); border-radius:5px; font-size:10px; cursor:pointer;">MUDAR FOTO</button>
+    </div>
+
+    <div style="margin-bottom: 15px; padding: 10px; background: #222; border-radius: 8px; border-left: 3px solid var(--gold);">
+  <span style="font-size: 10px; color: var(--text-muted); display: block;">CONTA LOGADA:</span>
+  <span id="displayUserEmail" style="font-size: 13px; color: #fff; font-weight: bold;">carregando...</span>
+</div>
+
+    <button class="btn-gold" onclick="saveProfile()" id="btnSaveProfile">Salvar Alterações</button>
+    <button class="btn-gold" style="background:none; color:#888; margin-top:10px;" onclick="closeModal()">Cancelar</button>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// --- CONFIGURAÇÃO ---
 const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const ADMIN_EMAILS = ['cauandiniz12@gmail.com', 'suelemdeoliveirapaiva7@gmail.com'];
 let currentUser = null;
-let lastResults = [];
+let allLeads = [];
 
-// 1. INICIALIZAÇÃO SEGURA
-sb.auth.getSession().then(({ data }) => {
-  if (!data.session) {
-    window.location.href = 'index.html';
-  } else {
-    currentUser = data.session.user;
-    document.getElementById('authGuard').style.display = 'none';
-    loadProfile(); // Função agora definida corretamente abaixo
-    loadData();
-  }
+// --- INICIALIZAÇÃO ---
+sb.auth.onAuthStateChange((event, session) => {
+  if (!session) window.location.href = 'index.html';
+  currentUser = session.user;
+  document.getElementById('authGuard').style.display = 'none';
+  loadProfile();
+  loadData();
 });
 
-// 2. FUNÇÕES DE PERFIL
+// --- PERFIL E UPLOAD ---
 async function loadProfile() {
   const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  const userEmailDisp = document.getElementById('displayUserEmail');
-  const nameDisp = document.getElementById('userNameDisp');
-  
-  if (userEmailDisp) userEmailDisp.innerText = currentUser.email;
-
   if (data) {
-    if (nameDisp) nameDisp.innerText = data.display_name || 'Usuário';
+    document.getElementById('userNameDisp').innerText = data.display_name || 'Usuário';
     document.getElementById('newName').value = data.display_name || '';
     if (data.avatar_url) {
-      const img = `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
+      const img = `<img src="${data.avatar_url}">`;
       document.getElementById('userBadge').innerHTML = img;
       document.getElementById('previewAvatar').innerHTML = img;
+      document.getElementById('displayUserEmail').innerText = currentUser.email;
     }
-  } else {
-     if (nameDisp) nameDisp.innerText = currentUser.email.split('@')[0];
   }
+}
+
+function previewFile() {
+  const file = document.getElementById('fileAvatar').files[0];
+  const reader = new FileReader();
+  reader.onloadend = () => document.getElementById('previewAvatar').innerHTML = `<img src="${reader.result}">`;
+  if (file) reader.readAsDataURL(file);
 }
 
 async function saveProfile() {
   const btn = document.getElementById('btnSaveProfile');
   btn.disabled = true; btn.innerText = 'Salvando...';
+  
   const name = document.getElementById('newName').value;
   const file = document.getElementById('fileAvatar').files[0];
   let avatarUrl = document.getElementById('previewAvatar').querySelector('img')?.src;
@@ -217,30 +306,28 @@ async function saveProfile() {
     }
   }
   await sb.from('profiles').upsert({ id: currentUser.id, display_name: name, avatar_url: avatarUrl });
-  showToast("Perfil atualizado!");
-  btn.disabled = false; btn.innerText = 'Salvar Alterações';
-  loadProfile();
+  location.reload();
 }
 
-function previewFile() {
-  const file = document.getElementById('fileAvatar').files[0];
-  const reader = new FileReader();
-  reader.onloadend = () => document.getElementById('previewAvatar').innerHTML = `<img src="${reader.result}" style="width:100%;height:100%;object-fit:cover;">`;
-  if (file) reader.readAsDataURL(file);
-}
+// --- PESQUISA COM LIMITE DE 25 ---
+// Variável global para armazenar os resultados e permitir "Adicionar Todos"
+let lastResults = []; 
 
-// 3. BUSCA E CRM (Lógica Async para evitar Erro 500)
 async function runSearch() {
   const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   const hoje = new Date().toISOString().split('T')[0];
 
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 25) return showToast("🚫 Limite diário atingido!");
+    if (count >= 25) { showToast('🚫 Limite diário atingido!'); return; }
   }
 
   const btn = document.getElementById('btnSearch');
-  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
+  const resultsDiv = document.getElementById('scraperResults');
+  
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
+  resultsDiv.innerHTML = ''; 
 
   const payload = {
     apiChoice: document.getElementById('apiChoice').value,
@@ -250,77 +337,93 @@ async function runSearch() {
   };
 
   try {
-    const response = await fetch('/api/search', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+    const response = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
     const data = await response.json();
+
+    if (!response.ok) throw new Error(data.error);
+
+    // Se for Scrape.do (resultado direto)
     if (data.type === 'direct') {
       processResults(data.results, isAdmin);
-    } else {
-      showToast("Pesquisa iniciada...");
-      pollApify(data.runId, isAdmin);
+    } 
+    // Se for Apify (precisa esperar)
+    else if (data.type === 'apify') {
+      showToast("Robô Orus iniciado no Google Maps...");
+      pollApifyResults(data.runId, isAdmin);
     }
+
   } catch (e) {
-    showToast("Erro na conexão.");
-    btn.disabled = false; btn.innerHTML = 'BUSCAR PROSPECTOS';
+    showToast("Erro ao iniciar busca. Verifique os Tokens.");
+    btn.disabled = false;
+    btn.innerHTML = 'BUSCAR PROSPECTOS';
   }
 }
 
-async function pollApify(runId, isAdmin) {
+// Função para ficar perguntando ao Apify se ele terminou
+async function pollApifyResults(runId, isAdmin) {
+  const btn = document.getElementById('btnSearch');
   let finished = false;
-  while(!finished) {
-    await new Promise(r => setTimeout(r, 4000));
-    const res = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=apify_api_J5pSN8eifxP8t7bqZ5x5CdIJC64wvj19Q8Cm`);
-    const data = await res.json();
-    if (data.data.status === 'SUCCEEDED') {
+  let attempts = 0;
+
+  while (!finished && attempts < 20) {
+    attempts++;
+    await new Promise(r => setTimeout(r, 4000)); // Espera 4 segundos entre as tentativas
+
+    const check = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=apify_api_J5pSN8eifxP8t7bqZ5x5CdIJC64wvj19Q8Cm`);
+    const checkData = await check.json();
+
+    if (checkData.data.status === 'SUCCEEDED') {
       finished = true;
-      const itemsRes = await fetch(`https://api.apify.com/v2/datasets/${data.data.defaultDatasetId}/items?token=apify_api_J5pSN8eifxP8t7bqZ5x5CdIJC64wvj19Q8Cm`);
-      const items = await itemsRes.json();
-      processResults(items.map(i => ({ name: i.title || i.name, address: i.address || i.fullAddress, phone: i.phone || '' })), isAdmin);
-    } else if (data.data.status === 'FAILED') {
-      finished = true; showToast("Erro no robô.");
+      const dsRes = await fetch(`https://api.apify.com/v2/datasets/${checkData.data.defaultDatasetId}/items?token=apify_api_J5pSN8eifxP8t7bqZ5x5CdIJC64wvj19Q8Cm`);
+      const items = await dsRes.json();
+      
+      const formatted = items.map(i => ({
+        name: i.title || i.name,
+        address: i.address || i.fullAddress,
+        phone: i.phone || i.phoneNumber || '',
+        website: i.website || i.url || ''
+      }));
+
+      processResults(formatted, isAdmin);
+    } else if (checkData.data.status === 'FAILED') {
+      showToast("O robô falhou na busca.");
+      finished = true;
     }
   }
-  document.getElementById('btnSearch').disabled = false;
-  document.getElementById('btnSearch').innerHTML = 'BUSCAR PROSPECTOS';
+  btn.disabled = false;
+  btn.innerHTML = 'BUSCAR PROSPECTOS';
 }
 
 function processResults(results, isAdmin) {
+  if (!results || results.length === 0) {
+    showToast("Nenhum lead encontrado.");
+    return;
+  }
   lastResults = results;
-  if (!isAdmin) results.forEach(() => sb.from('leads').insert({ user_id: currentUser.id, name: "Log Busca", status: 'novo' }).then()); // Log simplificado
+  if (!isAdmin) {
+    results.forEach(() => {
+      sb.from('logs_buscas').insert({ user_id: currentUser.id }).then();
+    });
+  }
   renderResults(results);
+  showToast(`${results.length} leads carregados!`);
 }
-
-// 4. DATA LOAD (DASHBOARD)
-async function loadData() {
-  const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
-  if (!data) return;
-  const stats = { 
-    novo: data.filter(l => l.status === 'novo').length, 
-    abordado: data.filter(l => l.status === 'abordado').length, 
-    agendado: data.filter(l => l.status === 'agendado').length, 
-    fechado: data.filter(l => l.status === 'fechado').length 
-  };
   
-  const setIf = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
-  setIf('dash-novo', stats.novo); setIf('dash-abordado', stats.abordado);
-  setIf('dash-agendado', stats.agendado); setIf('dash-fechado', stats.fechado);
-  setIf('f-novo', stats.novo); setIf('f-abordado', stats.abordado);
-  setIf('f-agendado', stats.agendado); setIf('f-fechado', stats.fechado);
-}
+function renderResults(results) {
+  const container = document.getElementById('scraperResults');
+  
+  // Adiciona o botão de "Adicionar Todos" no topo
+  let html = `<button id="btnAllToCRM" class="btn-gold" style="background:#2ecc71; margin:10px 0;" onclick="addAllToCRM()">Adicionar Todos ao CRM</button>`;
 
-// 5. UTILITÁRIOS
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.innerText = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-function openProfile() { document.getElementById('profileModal').classList.add('open'); }
-function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
-</script>
-</body>
-</html>
+  // Gera os cards dos leads (Note o (item, idx) abaixo, isso é essencial)
+  html += results.map((item, idx) => `
+    <div class="card" id="card-lead-${idx}">
+      <div style="font-weight:600; color:var(--gold);">${item.name}</div>
+      <div style="font-size:11px; color:var(--text-muted);">${item.address || 'Endereço não informado'}</div>
+      
+      <div style="margin-top:10px; display:fl
