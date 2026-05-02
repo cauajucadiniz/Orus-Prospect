@@ -317,19 +317,22 @@ async function runSearch() {
   const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   const hoje = new Date().toISOString().split('T')[0];
 
-  // 1. VERIFICAÇÃO DE LIMITE COM AVISO SUTIL
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
     if (count >= 25) { 
-      showToast('🚫 Limite de 25 leads atingido. Volte amanhã!'); 
-      return; 
+        showToast("⚠️ Limite diário atingido!"); 
+        return; 
     }
   }
 
   const btn = document.getElementById('btnSearch');
+  const resultsDiv = document.getElementById('scraperResults'); // Garanta que esse ID existe
+  
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
+  resultsDiv.innerHTML = '<p style="text-align:center; color:var(--gold); padding:20px;">Iniciando busca nos servidores da Google... isso pode levar 10 segundos.</p>';
 
+  // ... (resto do código com o fetch para /api/search) ...
   const payload = {
     apiChoice: document.getElementById('apiChoice').value,
     loc: document.getElementById('srcLoc').value,
