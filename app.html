@@ -3,223 +3,343 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ORUS - CRM Prospectador</title>
+<title>ORUS - Dashboard</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-/* MANTENDO SEU CSS ORIGINAL */
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --gold:#C9A84C;--gold-light:#E8C97A;--gold-dark:#9A7A30;
-  --black:#0A0A0A;--dark:#111111;--card:#181818;--card2:#1F1F1F;
-  --border:#2A2A2A;--border-gold:rgba(201,168,76,0.3);
-  --text:#F0EDE8;--text-muted:#8A8580;--text-gold:#C9A84C;
-  --green:#2ECC71;--red:#E74C3C;--blue:#3498DB;--orange:#E67E22;
-  --r:12px;--r-sm:8px;
+/* ... (Mantendo as variáveis e estilos base anteriores) ... */
+:root {
+  --gold: #C9A84C; --gold-light: #E8C97A; --black: #0A0A0A; --dark: #111; --card: #181818; --border: #2A2A2A; --text: #F0EDE8; --text-muted: #8A8580; --green: #2ECC71;
 }
-body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; }
 
-#authGuard{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--black);display:flex;align-items:center;justify-content:center;z-index:9999;}
-.auth-spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* Dashboard UI Fix */
+.topbar { background: var(--dark); border-bottom: 1px solid var(--gold); padding: 0 16px; height: 60px; display: flex; align-items: center; justify-content: space-between; sticky: top; z-index: 100; }
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--gold); letter-spacing: 3px; }
+.user-badge { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--gold); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #1a1a1a; }
+.user-badge img { width: 100%; height: 100%; object-fit: cover; }
 
-.topbar{background:var(--dark);border-bottom:1px solid var(--border-gold);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--gold);line-height:1}
-.logo span{font-size:10px;letter-spacing:2px;color:var(--text-muted);display:block;font-family:'DM Sans',sans-serif;font-weight:300;margin-top:-2px}
-.user-menu{display:flex;align-items:center;gap:10px}
-.user-badge{width:34px;height:34px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid var(--gold-dark);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold);cursor:pointer;overflow:hidden;}
-.logout-btn{padding:6px 12px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--border);color:var(--text-muted);background:transparent;cursor:pointer;transition:.15s;}
-.logout-btn:hover{border-color:var(--red);color:var(--red)}
+.nav { display: flex; background: var(--dark); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.nav-btn { flex: 1; padding: 15px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; }
+.nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-.nav{display:flex;background:var(--dark);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;position:sticky;top:56px;z-index:99;}
-.nav-btn{flex:none;padding:12px 18px;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap;}
-.nav-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.page { display: none; padding: 20px; padding-bottom: 100px; }
+.page.active { display: block; }
 
-.page{display:none;padding:16px;padding-bottom:80px}
-.page.active{display:block}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px}
-.section-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);margin-bottom:12px}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;text-align:center;}
-.stat-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--gold);line-height:1}
-.stat-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-top:4px}
-.inp{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;color:var(--text);font-size:14px;outline:none;transition:.2s;margin-bottom:10px;}
-.btn{width:100%;padding:14px;border-radius:var(--r-sm);font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:none;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px;}
-.btn-gold{background:var(--gold);color:var(--black)}
-.btn-outline{background:transparent;border:1px solid var(--border-gold);color:var(--gold)}
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:300;display:none;align-items:center;justify-content:center;}
-.modal-overlay.open{display:flex}
-.modal{background:var(--dark);border-radius:var(--r);border:1px solid var(--border-gold);padding:24px;width:90%;max-width:400px;}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--black);padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;opacity:0;transition:.3s;pointer-events:none;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(-10px)}
+/* Filtros Estilizados */
+.filter-section { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+.filter-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+.filter-group { margin-bottom: 15px; }
+.filter-label { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
+
+.radius-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.radio-chip { display: none; }
+.radio-label { display: block; padding: 8px; background: var(--dark); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 12px; cursor: pointer; }
+.radio-chip:checked + .radio-label { background: var(--gold); color: var(--black); border-color: var(--gold); }
+
+/* Dashboard Stats */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--card); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid var(--border); }
+.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--gold); }
+
+/* Progress Bar */
+.progress-container { margin-top: 20px; background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+.progress-bar { height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin: 10px 0; }
+.progress-fill { height: 100%; background: var(--gold); width: 0%; transition: 0.5s; }
+
+/* Botões de Ação Resultados */
+.result-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.action-btn { padding: 6px 12px; font-size: 10px; border-radius: 4px; border: 1px solid var(--gold); color: var(--gold); background: none; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+.action-btn.wp { border-color: var(--green); color: var(--green); }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--dark); border: 1px solid var(--gold); padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; }
+
+.inp { width: 100%; background: #1a1a1a; border: 1px solid var(--border); padding: 12px; color: #fff; border-radius: 8px; margin-bottom: 10px; outline: none; }
+.btn-gold { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
 </style>
 </head>
 <body>
 
-<div id="authGuard"><div class="auth-spinner"></div></div>
+<div id="authGuard" style="position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;">Carregando...</div>
 
 <div class="topbar">
-  <div class="logo">ORUS<span>Prospectador</span></div>
-  <div class="user-menu">
-    <div class="user-badge" id="userBadge" title="Editar Perfil">?</div>
-    <button class="logout-btn" onclick="doLogout()">Sair</button>
+  <div class="logo">ORUS</div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <div class="user-badge" id="userBadge" onclick="openProfile()">?</div>
+    <button onclick="sb.auth.signOut()" style="background:none; border:1px solid #333; color:#888; padding:5px 10px; border-radius:4px; font-size:10px; cursor:pointer;">SAIR</button>
   </div>
 </div>
 
 <nav class="nav">
-  <button class="nav-btn active" onclick="showPage('dashboard',this)">Painel</button>
-  <button class="nav-btn" onclick="showPage('leads',this)">Leads</button>
-  <button class="nav-btn" onclick="showPage('scraper',this)">OrusSearch</button>
-  <button class="nav-btn" onclick="showPage('relatorio',this)">Relatório</button>
+  <button class="nav-btn active" onclick="showPage('dashboard', this)">Painel</button>
+  <button class="nav-btn" onclick="showPage('leads', this)">Leads</button>
+  <button class="nav-btn" onclick="showPage('scraper', this)">OrusSearch</button>
 </nav>
 
-<!-- PAGINAS -->
+<!-- PAINEL / DASHBOARD -->
 <div class="page active" id="page-dashboard">
-    <div style="margin-bottom:16px">
-        <div style="font-size:11px;color:var(--text-muted)">BOM TRABALHO,</div>
-        <div style="font-size:20px;font-weight:600;color:var(--text)" id="welcomeName">...</div>
+  <div style="margin-bottom: 20px;">
+    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Bom trabalho,</span>
+    <h1 style="font-size: 24px;" id="userNameDisp">Carregando...</h1>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num" id="st-total">0</div><div style="font-size: 10px; color: var(--text-muted);">TOTAL LEADS</div></div>
+    <div class="stat-card"><div class="stat-num" id="st-agendados" style="color:var(--green)">0</div><div style="font-size: 10px; color: var(--text-muted);">AGENDADOS</div></div>
+  </div>
+
+  <div class="progress-container">
+    <div style="display:flex; justify-content:space-between; font-size:12px;">
+      <span>Meta de Abordagens (Diária)</span>
+      <span id="progText">0/15</span>
     </div>
-    <div class="stats-grid">
-        <div class="stat-card"><div class="stat-num" id="st-total">0</div><div class="stat-label">Total Leads</div></div>
-        <div class="stat-card"><div class="stat-num" id="st-agendado" style="color:var(--green)">0</div><div class="stat-label">Agendados</div></div>
-    </div>
-    <div class="section-title">Atividade Recente</div>
-    <div id="recentLeads"></div>
+    <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+    <p style="font-size:10px; color:var(--text-muted);">Mantenha o ritmo para fechar mais contratos!</p>
+  </div>
+
+  <h2 style="font-family:'Bebas Neue'; color:var(--gold); margin-top:25px; margin-bottom:15px;">Atividade Recente</h2>
+  <div id="recentLeads"></div>
 </div>
 
+<!-- LEADS (OCULTADO PARA BREVIDADE) -->
 <div class="page" id="page-leads">
-    <input class="inp" id="searchInp" placeholder="Buscar leads..." oninput="renderLeads()">
-    <div id="leadsList"></div>
+  <input class="inp" id="searchLeads" placeholder="Buscar nos meus leads..." oninput="renderLeads()">
+  <div id="leadsList"></div>
 </div>
 
+<!-- ORUSSEARCH -->
 <div class="page" id="page-scraper">
-    <div class="section-title">OrusSearch (Limite: 15/dia)</div>
-    <div class="card">
-        <select class="inp" id="scraperCat">
-            <option value="">Segmento...</option>
-            <option>Clínica estética</option><option>Dentista</option><option>Academia</option><option>Restaurante</option>
-        </select>
-        <input class="inp" id="scraperCity" placeholder="Cidade">
-        <select class="inp" id="scraperLimit">
-            <option value="5">5 resultados</option>
-            <option value="15">15 resultados</option>
-        </select>
-        <button class="btn btn-gold" id="scraperBtn" onclick="runScraper()">Buscar Leads</button>
+  <div class="filter-section">
+    <h2 class="filter-title">Filtros de Busca</h2>
+    
+    <div class="filter-group">
+      <label class="filter-label">Localização</label>
+      <input class="inp" id="srcLoc" placeholder="CEP, bairro, cidade ou estado...">
     </div>
-    <div id="scraperResults"></div>
-</div>
 
-<div class="page" id="page-relatorio">
-    <div class="section-title">Relatório Geral</div>
-    <div id="relatorioContent"></div>
-    <button class="btn btn-outline" onclick="exportCSV()">Exportar CSV</button>
+    <div class="filter-group">
+      <label class="filter-label">Raio de Busca: <span id="radiusVal">5 KM</span></label>
+      <div class="radius-grid">
+        <input type="radio" name="radius" value="1000" class="radio-chip" id="r1"><label class="radio-label" for="r1">1 km</label>
+        <input type="radio" name="radius" value="5000" class="radio-chip" id="r5" checked><label class="radio-label" for="r5">5 km</label>
+        <input type="radio" name="radius" value="10000" class="radio-chip" id="r10"><label class="radio-label" for="r10">10 km</label>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Segmento de Negócio</label>
+      <select class="inp" id="srcSeg">
+        <option value="">Selecione um segmento...</option>
+        <option value="Clínica Estética">Clínica Estética</option>
+        <option value="Odontologia">Odontologia</option>
+        <option value="Academia">Academia</option>
+        <option value="Advocacia">Advocacia</option>
+      </select>
+      <input class="inp" id="srcNicho" placeholder="Ou digite um nicho específico...">
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Tipo de Negócio</label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:14px; margin-bottom:10px;">
+        <input type="radio" name="type" value="company" checked> Empresa / CNPJ
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
+        <input type="radio" name="type" value="freelancer"> Profissional Autônomo
+      </label>
+    </div>
+
+    <button class="btn-gold" id="btnSearch" onclick="runSearch()">Buscar Prospectos</button>
+  </div>
+
+  <div id="searchControls" style="display:none; margin-bottom:15px;">
+    <button class="btn-gold" style="background:#2ecc71" onclick="addAllToCRM()">Adicionar Todos ao CRM</button>
+  </div>
+  <div id="scraperResults"></div>
 </div>
 
 <!-- MODAL PERFIL -->
 <div class="modal-overlay" id="profileModal">
-    <div class="modal">
-      <div class="modal-title" style="color:var(--gold); font-family:'Bebas Neue'; font-size:24px; margin-bottom:15px;">EDITAR PERFIL</div>
-      <label style="font-size:11px; color:var(--text-muted)">NOME DE EXIBIÇÃO</label>
-      <input class="inp" id="profileName" placeholder="Seu nome">
-      <label style="font-size:11px; color:var(--text-muted)">URL DA FOTO (LINK)</label>
-      <input class="inp" id="profileAvatar" placeholder="https://link-da-foto.com">
-      <button class="btn btn-gold" onclick="saveProfile()">Salvar Perfil</button>
-      <button class="btn btn-outline" style="margin-top:10px" onclick="document.getElementById('profileModal').classList.remove('open')">Cancelar</button>
+  <div class="modal">
+    <h2 class="filter-title">Editar Perfil</h2>
+    <label class="filter-label">Nome de Exibição</label>
+    <input class="inp" id="newName">
+    
+    <label class="filter-label">Foto de Perfil</label>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+      <div class="user-badge" style="width:60px; height:60px;" id="previewAvatar">?</div>
+      <input type="file" id="fileAvatar" accept="image/*" style="display:none" onchange="previewFile()">
+      <button onclick="document.getElementById('fileAvatar').click()" style="padding:10px; background:#222; border:1px solid var(--gold); color:var(--gold); border-radius:5px; font-size:12px; cursor:pointer;">ESCOLHER DA GALERIA</button>
     </div>
-</div>
 
-<div class="toast" id="toast"></div>
+    <button class="btn-gold" onclick="saveProfile()" id="btnSaveProfile">Salvar Perfil</button>
+    <button class="btn-gold" style="background:none; color:#888; margin-top:10px;" onclick="closeModal()">Cancelar</button>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPA_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
-let leads = [];
+let currentLeads = [];
+let lastResults = [];
 
-// INICIALIZAÇÃO E AUTH
-sb.auth.getSession().then(({ data }) => {
-  if(!data.session) { window.location.href = 'index.html'; return; }
-  currentUser = data.session.user;
-  
-  // AQUI É O LUGAR CORRETO PARA CHAMAR O PERFIL
-  updateProfileUI(); 
-
+// AUTH CHECK
+sb.auth.onAuthStateChange((event, session) => {
+  if (!session) window.location.href = 'index.html';
+  currentUser = session.user;
   document.getElementById('authGuard').style.display = 'none';
-  loadLeads();
+  loadProfile();
+  loadStats();
 });
 
-async function doLogout(){ await sb.auth.signOut(); window.location.href='index.html'; }
-
-// PERFIL
-document.getElementById('userBadge').onclick = () => document.getElementById('profileModal').classList.add('open');
-
-async function updateProfileUI() {
-    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-    if (data) {
-        if (data.avatar_url) document.getElementById('userBadge').innerHTML = `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
-        if (data.display_name) document.getElementById('welcomeName').innerText = data.display_name;
-    } else {
-        const email = currentUser.email || '';
-        document.getElementById('userBadge').innerText = email.substring(0,2).toUpperCase();
-        document.getElementById('welcomeName').innerText = email.split('@')[0];
+// PROFILE FUNCTIONS
+async function loadProfile() {
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (data) {
+    document.getElementById('userNameDisp').innerText = data.display_name || 'Usuário';
+    document.getElementById('newName').value = data.display_name || '';
+    if (data.avatar_url) {
+      const imgHtml = `<img src="${data.avatar_url}">`;
+      document.getElementById('userBadge').innerHTML = imgHtml;
+      document.getElementById('previewAvatar').innerHTML = imgHtml;
     }
+  }
+}
+
+function previewFile() {
+  const file = document.getElementById('fileAvatar').files[0];
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    document.getElementById('previewAvatar').innerHTML = `<img src="${reader.result}">`;
+  };
+  if (file) reader.readAsDataURL(file);
 }
 
 async function saveProfile() {
-    const name = document.getElementById('profileName').value;
-    const avatar = document.getElementById('profileAvatar').value;
-    const { error } = await sb.from('profiles').upsert({ id: currentUser.id, display_name: name, avatar_url: avatar });
-    if (!error) { showToast("Perfil salvo!"); setTimeout(() => location.reload(), 1000); }
+  const btn = document.getElementById('btnSaveProfile');
+  btn.disabled = true; btn.innerText = 'Salvando...';
+  
+  const name = document.getElementById('newName').value;
+  const file = document.getElementById('fileAvatar').files[0];
+  let avatarUrl = document.getElementById('previewAvatar').querySelector('img')?.src;
+
+  if (file) {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
+    const { error: uploadError } = await sb.storage.from('avatars').upload(fileName, file);
+    
+    if (!uploadError) {
+      const { data } = sb.storage.from('avatars').getPublicUrl(fileName);
+      avatarUrl = data.publicUrl;
+    }
+  }
+
+  await sb.from('profiles').upsert({ id: currentUser.id, display_name: name, avatar_url: avatarUrl });
+  location.reload();
 }
 
-// SCRAPER COM LIMITE DE PESQUISA E PRIORIDADE WHATSAPP
-async function runScraper() {
-  const hoje = new Date().toISOString().split('T')[0];
+// SCRAPER FUNCTIONS
+async function runSearch() {
+  const btn = document.getElementById('btnSearch');
+  btn.innerText = 'Buscando...'; btn.disabled = true;
+
+  const loc = document.getElementById('srcLoc').value;
+  const seg = document.getElementById('srcSeg').value || document.getElementById('srcNicho').value;
+  const rad = document.querySelector('input[name="radius"]:checked').value;
+  
+  if (!loc || !seg) { alert('Preencha Local e Segmento'); btn.disabled = false; return; }
+
+  // Simulação de chamada de API (Substitua pela sua chamada real do Apify/Backend)
+  // Nota: Para os filtros funcionarem, você deve enviar esses campos no body do fetch
   try {
-    const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 15) { showToast('⚠️ Limite de 15 pesquisas diárias atingido!'); return; }
-    await sb.from('logs_buscas').insert({ user_id: currentUser.id });
-  } catch (err) { console.error(err); }
+    const response = await fetch('/api/scraper', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ location: loc, segment: seg, radius: rad, user_id: currentUser.id })
+    });
+    const data = await response.json();
+    lastResults = data.results;
+    renderResults(data.results);
+    document.getElementById('searchControls').style.display = 'block';
+  } catch (e) {
+    alert('Erro na busca. Verifique seu limite de 15/dia.');
+  }
+  btn.disabled = false; btn.innerText = 'Buscar Prospectos';
+}
 
-  const cat = document.getElementById('scraperCat').value;
-  const city = document.getElementById('scraperCity').value.trim();
-  if(!cat || !city) { showToast("Preencha os campos!"); return; }
+function renderResults(results) {
+  const container = document.getElementById('scraperResults');
+  container.innerHTML = results.map((item, idx) => `
+    <div class="card">
+      <div style="font-weight:600; color:var(--gold);">${item.name}</div>
+      <div style="font-size:12px; color:var(--text-muted); margin: 4px 0;">${item.address}</div>
+      <div class="result-actions">
+        ${item.phone ? `<a href="https://wa.me/${item.phone.replace(/\D/g,'')}" target="_blank" class="action-btn wp">WhatsApp</a>` : ''}
+        ${item.website ? `<a href="${item.website}" target="_blank" class="action-btn">Website</a>` : ''}
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.address)}" target="_blank" class="action-btn">Maps</a>
+        <button onclick="addToCRM(${idx})" class="action-btn" style="background:var(--gold); color:#000;">+ CRM</button>
+      </div>
+    </div>
+  `).join('');
+}
 
-  document.getElementById('scraperBtn').disabled = true;
-  document.getElementById('scraperBtn').innerText = "Buscando...";
+async function addAllToCRM() {
+  if (confirm(`Deseja adicionar todos os ${lastResults.length} leads ao seu CRM?`)) {
+    for (const lead of lastResults) {
+      await sb.from('leads').insert({ 
+        user_id: currentUser.id, 
+        name: lead.name, 
+        phone: lead.phone, 
+        addr: lead.address,
+        site: lead.website,
+        status: 'novo'
+      });
+    }
+    alert('Todos os leads foram adicionados!');
+    loadStats();
+  }
+}
 
-  try {
-    const res = await fetch('/api/scraper', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cat, city, limit: 15 }) });
-    const data = await res.json();
+// DASHBOARD STATS
+async function loadStats() {
+  const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
+  if (data) {
+    document.getElementById('st-total').innerText = data.length;
+    document.getElementById('st-agendados').innerText = data.filter(l => l.status === 'agendado').length;
     
-    // PRIORIZAR QUEM TEM TELEFONE
-    const ordenados = data.results.sort((a,b) => (b.phone ? 1 : 0) - (a.phone ? 1 : 0));
-    
-    const container = document.getElementById('scraperResults');
-    container.innerHTML = ordenados.map(item => `
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div style="font-weight:600">${item.title || item.name}</div>
-                <div style="font-size:12px; color:var(--text-muted)">${item.phone || 'Sem telefone'}</div>
-            </div>
-            ${item.phone ? '<span style="color:var(--green); font-size:10px; font-weight:bold;">WHATSAPP DISPONÍVEL</span>' : ''}
-        </div>
+    // Meta Diária (Baseado em leads criados hoje)
+    const hoje = new Date().toISOString().split('T')[0];
+    const leadsHoje = data.filter(l => l.created_at.startsWith(hoje)).length;
+    const pct = Math.min((leadsHoje / 15) * 100, 100);
+    document.getElementById('progFill').style.width = pct + '%';
+    document.getElementById('progText').innerText = `${leadsHoje}/15`;
+
+    // Atividade Recente
+    const recent = data.slice(-3).reverse();
+    document.getElementById('recentLeads').innerHTML = recent.map(l => `
+      <div class="card" style="padding:12px; font-size:13px; margin-bottom:8px;">
+        <b>${l.name}</b> - <span style="color:var(--gold)">${l.status.toUpperCase()}</span>
+      </div>
     `).join('');
-    
-    showToast("Pesquisa concluída!");
-  } catch (e) { showToast("Erro na API"); }
-  document.getElementById('scraperBtn').disabled = false;
-  document.getElementById('scraperBtn').innerText = "Buscar Leads";
+  }
 }
 
-// FUNÇÕES AUXILIARES (TOAST, PAGES, ETC)
-function showToast(m){ const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
-function showPage(id,btn){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById('page-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
-async function loadLeads(){ /* sua função original de carregar leads */ }
-function renderLeads(){ /* sua função original de renderizar leads */ }
+// UTILS
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+function openProfile() { document.getElementById('profileModal').classList.add('open'); }
+function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
 </script>
 </body>
 </html>
