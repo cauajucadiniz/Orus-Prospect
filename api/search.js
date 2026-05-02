@@ -5,6 +5,7 @@ export default async function handler(req, res) {
   const SCRAPEDO_TOKEN = process.env.SCRAPEDO_TOKEN;
 
   try {
+    let results = [];
     if (apiChoice === 'apify') {
       const start = await fetch(`https://api.apify.com/v2/acts/apify~google-maps-scraper/runs?token=${APIFY_TOKEN}`, {
         method: 'POST',
@@ -12,40 +13,38 @@ export default async function handler(req, res) {
         body: JSON.stringify({ queries: [`${seg} em ${loc}`], maxQueries: 1, limitPerQuery: parseInt(limit) })
       });
       const startData = await start.json();
-      const runId = startData?.data?.id;
-      if (!runId) throw new Error('Falha no Apify');
+      if (!startData?.data?.id) throw new Error('Token Apify Inválido ou Saldo Esgotado');
 
+      // Poll simplificado para evitar timeout na Vercel
       let status = 'RUNNING';
-      let items = [];
-      while (status !== 'SUCCEEDED') {
+      let runId = startData.data.id;
+      for (let i = 0; i < 5; i++) { // Tenta por 15 segundos
         await new Promise(r => setTimeout(r, 3000));
         const check = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`);
         const checkData = await check.json();
-        status = checkData?.data?.status;
-        if (status === 'SUCCEEDED') {
+        if (checkData?.data?.status === 'SUCCEEDED') {
           const dsRes = await fetch(`https://api.apify.com/v2/datasets/${checkData.data.defaultDatasetId}/items?token=${APIFY_TOKEN}`);
-          items = await dsRes.json();
+          results = await dsRes.json();
+          break;
         }
-        if (status === 'FAILED' || status === 'ABORTED') throw new Error('Apify falhou');
       }
-      const results = items.map(i => ({
-        name: i.title || i.name, address: i.address || i.fullAddress, phone: i.phone || i.phoneNumber || '', website: i.website || i.url || ''
-      }));
-      return res.status(200).json({ results });
-
     } else {
-      // AJUSTE SCRAPE.DO: Garantindo que o formato de saída seja IGUAL ao Apify
+      // SCRAPE.DO - Google Search API
       const q = encodeURIComponent(`${seg} em ${loc}`);
       const response = await fetch(`https://api.scrape.do/google?token=${SCRAPEDO_TOKEN}&q=${q}`);
       const data = await response.json();
-      const results = (data.organic_results || []).slice(0, limit).map(i => ({
-        name: i.title,
-        address: i.snippet || 'Localização via site',
-        phone: '', // Google Search não traz telefone fácil
-        website: i.link
-      }));
-      return res.status(200).json({ results });
+      results = (data.organic_results || []).slice(0, limit);
     }
+
+    // PADRONIZAÇÃO FINAL (Garante que o site entenda ambos)
+    const formatted = results.map(i => ({
+      name: i.title || i.name || 'Sem nome',
+      address: i.address || i.snippet || 'Localização não informada',
+      phone: i.phone || i.phoneNumber || '',
+      website: i.website || i.link || ''
+    }));
+
+    return res.status(200).json({ results: formatted });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
