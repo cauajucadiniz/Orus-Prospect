@@ -354,24 +354,31 @@ function renderResults(results) {
 
 // --- RELATÓRIO E DADOS ---
 async function loadData() {
-  const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
-  if (data) {
-    allLeads = data;
-    document.getElementById('st-total').innerText = data.length;
-    document.getElementById('st-agendados').innerText = data.filter(l => l.status === 'agendado').length;
-    
-    // Funil
-    document.getElementById('f-novo').innerText = data.filter(l => l.status === 'novo').length;
-    document.getElementById('f-abordado').innerText = data.filter(l => l.status === 'abordado').length;
-    document.getElementById('f-agendado').innerText = data.filter(l => l.status === 'agendado').length;
-    document.getElementById('f-fechado').innerText = data.filter(l => l.status === 'fechado').length;
-    document.getElementById('f-sem').innerText = data.filter(l => l.status === 'sem-resposta').length;
+  const { data, error } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
+  if (error) return;
 
-    // Métricas
-    const total = data.length || 1;
-    document.getElementById('c-agendamento').innerText = Math.round((data.filter(l => l.status === 'agendado').length / total) * 100) + '%';
-    document.getElementById('c-fechamento').innerText = Math.round((data.filter(l => l.status === 'fechado').length / total) * 100) + '%';
-  }
+  const stats = {
+    novo: data.filter(l => l.status === 'novo').length,
+    abordado: data.filter(l => l.status === 'abordado').length,
+    agendado: data.filter(l => l.status === 'agendado').length,
+    fechado: data.filter(l => l.status === 'fechado').length
+  };
+
+  // Atualiza os campos apenas se eles existirem na tela
+  const setEl = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
+
+  setEl('st-total', data.length);
+  setEl('st-agendados', stats.agendado);
+  setEl('dash-novo', stats.novo);
+  setEl('dash-abordado', stats.abordado);
+  setEl('dash-agendado', stats.agendado);
+  setEl('dash-fechado', stats.fechado);
+  
+  // Funil da aba Relatório (IDs f-novo, etc)
+  setEl('f-novo', stats.novo);
+  setEl('f-abordado', stats.abordado);
+  setEl('f-agendado', stats.agendado);
+  setEl('f-fechado', stats.fechado);
 }
 
   async function loadStats() {
@@ -404,6 +411,16 @@ function showPage(id, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   if(id === 'relatorio') loadData();
+}
+  function showToast(message) {
+  const toast = document.getElementById('toast');
+  if (toast) {
+    toast.innerText = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  } else {
+    alert(message);
+  }
 }
 function openProfile() { document.getElementById('profileModal').classList.add('open'); }
 function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
