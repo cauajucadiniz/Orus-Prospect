@@ -174,91 +174,29 @@ body{
 const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-  // Detecta se o usuário clicou no link de recuperação de senha
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === "PASSWORD_RECOVERY") {
-    const novaSenha = prompt("Digite sua nova senha (mínimo 6 caracteres):");
-    if (novaSenha && novaSenha.length >= 6) {
-      const { error } = await sb.auth.updateUser({ password: novaSenha });
-      if (error) alert("Erro ao atualizar: " + error.message);
-      else alert("Senha atualizada com sucesso! Já pode logar.");
-    }
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") { window.location.href = "recovery.html"; }
+  else if (session) {
+    if (!window.location.hash.includes("recovery")) window.location.href = "app.html";
   }
 });
 
-function showMsg(text, type){
-  var el = document.getElementById('msg');
-  el.textContent = text;
-  el.className = 'msg ' + type;
-  el.style.display = 'block';
-}
-function hideMsg(){ document.getElementById('msg').style.display = 'none'; }
-
-function setLoading(btnId, loading){
-  var btn = document.getElementById(btnId);
-  if(loading){
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div>';
-  } else {
-    btn.disabled = false;
-  }
-}
-
 async function doLogin(){
-  hideMsg();
-  var email = document.getElementById('loginEmail').value.trim();
-  var pass = document.getElementById('loginPass').value;
-  if(!email || !pass){ showMsg('Preencha email e senha.', 'error'); return; }
-  setLoading('loginBtn', true);
-  var { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if(error){
-    setLoading('loginBtn', false);
-    document.getElementById('loginBtn').innerHTML = 'Entrar';
-    showMsg('Email ou senha incorretos.', 'error');
-  } else {
-    document.getElementById('loginBtn').innerHTML = 'Redirecionando...';
-    window.location.href = 'app.html';
-  }
+  const e = document.getElementById('loginEmail').value;
+  const p = document.getElementById('loginPass').value;
+  const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
+  if(error) alert("Email ou senha inválidos.");
 }
 
 async function doForgot(){
-  hideMsg();
-  var email = document.getElementById('forgotEmail').value.trim();
-  if(!email){ showMsg('Digite seu email.', 'error'); return; }
-  setLoading('forgotBtn', true);
-  var { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/app.html'
-  });
-  setLoading('forgotBtn', false);
-  document.getElementById('forgotBtn').innerHTML = 'Enviar link de recuperação';
-  if(error){ showMsg('Erro ao enviar. Tente novamente.', 'error'); }
-  else { showMsg('Link enviado! Verifique seu email.', 'success'); }
+  const e = document.getElementById('forgotEmail').value;
+  await sb.auth.resetPasswordForEmail(e, { redirectTo: 'https://orus-prospect.vercel.app/recovery.html' });
+  alert("Link de recuperação enviado ao seu e-mail!");
 }
 
-function showForgot(){
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('forgotForm').style.display = 'block';
-  document.getElementById('formTitle').textContent = 'Recuperar Senha';
-  hideMsg();
-}
-function showLogin(){
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('forgotForm').style.display = 'none';
-  document.getElementById('formTitle').textContent = 'Acesso Restrito';
-  hideMsg();
-}
-
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Enter'){
-    var ff = document.getElementById('forgotForm');
-    if(ff.style.display === 'block') doForgot();
-    else doLogin();
-  }
-});
-
-sb.auth.getSession().then(function({ data }){
-  if(data.session) window.location.href = 'app.html';
-});
+function showForgot(){ document.getElementById('loginForm').style.display='none'; document.getElementById('forgotForm').style.display='block'; }
+function showLogin(){ document.getElementById('loginForm').style.display='block'; document.getElementById('forgotForm').style.display='none'; }
 </script>
 </body>
 </html>
