@@ -317,20 +317,18 @@ async function runSearch() {
   const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   const hoje = new Date().toISOString().split('T')[0];
 
+  // 1. VERIFICAÇÃO DE LIMITE COM AVISO SUTIL
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 25) { showToast('⚠️ Cota diária de 25 leads atingida!'); return; }
+    if (count >= 25) { 
+      showToast('🚫 Limite de 25 leads atingido. Volte amanhã!'); 
+      return; 
+    }
   }
 
   const btn = document.getElementById('btnSearch');
-  
-  // 1. DESATIVA O BOTÃO E MOSTRA O CARREGAMENTO
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
-
-  // TRAVA O BOTÃO E MOSTRA SPINNER
-  btn.disabled = true;
-  btn.innerHTML = `<div class="spinner"></div> BUSCANDO LEADS...`;
 
   const payload = {
     apiChoice: document.getElementById('apiChoice').value,
@@ -349,25 +347,30 @@ async function runSearch() {
     const data = await response.json();
 
     if (response.ok) {
-      lastResults = data.results; // Salva na variável global
-      if (!isAdmin) {
-         for(let i=0; i < data.results.length; i++) {
-           await sb.from('logs_buscas').insert({ user_id: currentUser.id });
-         }
+      lastResults = data.results;
+      if (lastResults.length === 0) {
+          showToast("Nenhum lead encontrado.");
+      } else {
+          // Registra o uso no limite apenas se não for Admin
+          if (!isAdmin) {
+            for(let i=0; i < lastResults.length; i++) {
+              await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+            }
+          }
+          renderResults(data.results);
+          showToast(`Sucesso! ${lastResults.length} leads encontrados.`);
       }
-      renderResults(data.results);
-      showToast("Busca concluída!");
     } else {
-      alert("Erro: " + data.error);
+      showToast("Erro no Servidor: " + data.error);
     }
   } catch (e) {
-    alert('Erro de conexão com o servidor.');
+    showToast("Erro de conexão. Tente novamente.");
   } finally {
-    // 2. REATIVA O BOTÃO APÓS TERMINAR
     btn.disabled = false;
     btn.innerHTML = 'BUSCAR LEADS';
   }
 }
+  
 function renderResults(results) {
   const container = document.getElementById('scraperResults');
   
@@ -686,13 +689,15 @@ function getStatusColor(status) {
 // --- UTILITÁRIOS ---
 function showToast(message) {
   const toast = document.getElementById('toast');
-  if (toast) {
-    toast.innerText = message;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-  } else {
-    alert(message);
-  }
+  if (!toast) return;
+  toast.innerText = message;
+  toast.style.opacity = "1";
+  toast.style.transform = "translateX(-50%) translateY(0)";
+  
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(-50%) translateY(20px)";
+  }, 3000); // Some sozinho após 3 segundos
 }
 
 function openProfile() { document.getElementById('profileModal').classList.add('open'); }
