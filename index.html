@@ -33,27 +33,35 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    const sb = supabase.createClient('https://aeymzibnwafenvuoagum.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw');
+const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    sb.auth.onAuthStateChange((event, session) => {
-        if (event === "PASSWORD_RECOVERY") { window.location.href = "recovery.html"; }
-        else if (session && event === "SIGNED_IN") {
-            if (!window.location.hash.includes("recovery")) window.location.href = "app.html";
-        }
-    });
-
-    async function doLogin() {
-        const { error } = await sb.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('pass').value });
-        if(error) alert("Acesso negado.");
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") { 
+    window.location.href = "recovery.html"; 
+  } else if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+    if (!window.location.hash.includes("recovery")) {
+      window.location.href = "app.html";
     }
+  }
+});
 
-    async function doForgot() {
-        await sb.auth.resetPasswordForEmail(document.getElementById('resetEmail').value, { redirectTo: 'https://orus-prospect.vercel.app/recovery.html' });
-        alert("E-mail enviado!");
-    }
+async function doLogin(){
+  const e = document.getElementById('email').value;
+  const p = document.getElementById('pass').value;
+  const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
+  if(error) alert("Erro no login.");
+}
 
-    function showForgot() { document.getElementById('loginForm').style.display='none'; document.getElementById('forgotForm').style.display='block'; }
-    function showLogin() { document.getElementById('loginForm').style.display='block'; document.getElementById('forgotForm').style.display='none'; }
+async function doForgot(){
+  const e = document.getElementById('resetEmail').value;
+  await sb.auth.resetPasswordForEmail(e, { redirectTo: 'https://orus-prospect.vercel.app/recovery.html' });
+  alert("Link enviado!");
+}
+
+function showForgot(){ document.getElementById('loginForm').style.display='none'; document.getElementById('forgotForm').style.display='block'; }
+function showLogin(){ document.getElementById('loginForm').style.display='block'; document.getElementById('forgotForm').style.display='none'; }
 </script>
 </body>
 </html>
