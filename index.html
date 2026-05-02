@@ -227,7 +227,7 @@ async function doForgot(){
   if(!email){ showMsg('Digite seu email.', 'error'); return; }
   setLoading('forgotBtn', true);
   var { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/app.html'
+    redirectTo: 'https://orus-prospect.vercel.app/recovery.html',
   });
   setLoading('forgotBtn', false);
   document.getElementById('forgotBtn').innerHTML = 'Enviar link de recuperação';
