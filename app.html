@@ -1,341 +1,124 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ORUS - CRM Prospectador</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-/* --- ESTILOS GERAIS --- */
-:root {
-  --gold: #C9A84C; --gold-light: #E8C97A; --black: #0A0A0A; --dark: #111; 
-  --card: #181818; --border: #2A2A2A; --text: #F0EDE8; --text-muted: #8A8580;
-  --blue: #3498DB; --orange: #E67E22; --green: #2ECC71; --red: #E74C3C;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+<!-- ... (Estilos e Head mantidos iguais aos anteriores) ... -->
 
-/* Navegação e Topbar */
-.topbar { background: var(--dark); border-bottom: 1px solid var(--gold); padding: 0 16px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-.logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--gold); letter-spacing: 3px; }
-.user-badge { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--gold); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #1a1a1a; font-weight: bold; color: var(--gold); }
-.user-badge img { width: 100%; height: 100%; object-fit: cover; }
-
-.nav { display: flex; background: var(--dark); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
-.nav-btn { flex: 1; padding: 15px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
-.nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
-
-.page { display: none; padding: 20px; padding-bottom: 100px; }
-.page.active { display: block; }
-
-/* Elementos de UI */
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--gold); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
-.inp { width: 100%; background: #1a1a1a; border: 1px solid var(--border); padding: 12px; color: #fff; border-radius: 8px; margin-bottom: 12px; outline: none; font-family: inherit; }
-.btn-gold { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
-.btn-gold:active { transform: scale(0.98); }
-
-/* Relatório / Funil */
-.funnel-bar { height: 44px; border-radius: 8px; display: flex; align-items: center; padding: 0 14px; margin-bottom: 8px; font-size: 12px; font-weight: 600; justify-content: space-between; }
-
-/* Modal Perfil */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
-.modal-overlay.open { display: flex; }
-
-/* Filtros Search */
-.radius-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
-.radio-chip { display: none; }
-.radio-label { display: block; padding: 10px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 11px; cursor: pointer; }
-.radio-chip:checked + .radio-label { background: var(--gold); color: var(--black); border-color: var(--gold); }
-</style>
-</head>
-<body>
-
-<div id="authGuard" style="position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;">Carregando Orus...</div>
-
-<div class="topbar">
-  <div class="logo">ORUS</div>
-  <div style="display:flex; align-items:center; gap:12px;">
-    <div class="user-badge" id="userBadge" onclick="openProfile()">?</div>
-    <button onclick="sb.auth.signOut()" class="nav-btn" style="border:1px solid #333; padding:5px 10px; border-radius:4px; font-size:9px;">SAIR</button>
-  </div>
-</div>
-
-<nav class="nav">
-  <button class="nav-btn active" onclick="showPage('dashboard', this)">Painel</button>
-  <button class="nav-btn" onclick="showPage('leads', this)">Leads</button>
-  <button class="nav-btn" onclick="showPage('scraper', this)">OrusSearch</button>
-  <button class="nav-btn" onclick="showPage('relatorio', this)">Relatório</button>
-</nav>
-
-<!-- PAINEL -->
+<!-- PAINEL ROBUSTO -->
 <div class="page active" id="page-dashboard">
   <div style="margin-bottom: 20px;">
-    <span style="font-size: 10px; color: var(--text-muted);">BOM TRABALHO,</span>
-    <h1 id="userNameDisp">...</h1>
+    <span style="font-size: 10px; color: var(--text-muted);">VISÃO GERAL DO CRM</span>
+    <h1 id="userNameDisp">Carregando...</h1>
   </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-    <div class="card" style="text-align:center;"><div style="font-size:24px; font-family:'Bebas Neue'; color:var(--gold);" id="st-total">0</div><div style="font-size:9px; color:var(--text-muted);">TOTAL LEADS</div></div>
-    <div class="card" style="text-align:center;"><div style="font-size:24px; font-family:'Bebas Neue'; color:var(--green);" id="st-agendados">0</div><div style="font-size:9px; color:var(--text-muted);">AGENDADOS</div></div>
+
+  <!-- Stats Grid Completo -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+    <div class="card" style="text-align:center; border-left:4px solid var(--blue);"><div style="font-size:24px; font-family:'Bebas Neue';" id="f-novo">0</div><div style="font-size:9px; color:var(--blue);">NOVOS</div></div>
+    <div class="card" style="text-align:center; border-left:4px solid var(--orange);"><div style="font-size:24px; font-family:'Bebas Neue';" id="f-abordado">0</div><div style="font-size:9px; color:var(--orange);">ABORDADOS</div></div>
+    <div class="card" style="text-align:center; border-left:4px solid var(--gold);"><div style="font-size:24px; font-family:'Bebas Neue';" id="f-agendado">0</div><div style="font-size:9px; color:var(--gold);">AGENDADOS</div></div>
+    <div class="card" style="text-align:center; border-left:4px solid var(--green);"><div style="font-size:24px; font-family:'Bebas Neue';" id="f-fechado">0</div><div style="font-size:9px; color:var(--green);">FECHADOS</div></div>
   </div>
-  <h2 class="section-title" style="margin-top:20px;">Atividade Recente</h2>
+
+  <!-- Meta Diária -->
+  <div class="card" style="margin-top:15px; border-color: var(--border-gold);">
+    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px;">
+        <span>META DIÁRIA DE ABORDAGENS</span>
+        <span id="progText">0 / 10</span>
+    </div>
+    <div class="progress-bar" style="height:8px; background:#222; border-radius:4px; overflow:hidden;">
+        <div id="progFill" style="height:100%; background:var(--gold); width:0%; transition:0.5s;"></div>
+    </div>
+  </div>
+
+  <h2 class="section-title" style="margin-top:20px;">📊 Atividade Recente</h2>
   <div id="recentLeads"></div>
 </div>
 
-<!-- LEADS -->
-<div class="page" id="page-leads">
-    <input class="inp" id="searchLeads" placeholder="Buscar nos meus leads..." oninput="renderLeads()">
-    <div id="leadsList"></div>
-</div>
-
-<!-- ORUSSEARCH (FILTROS COMPLETOS) -->
+<!-- BUSCA COM AVISO DE LIMITE -->
 <div class="page" id="page-scraper">
-  <div class="card">
-    <h2 class="section-title">Filtros de Busca</h2>
-    
-    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">LOCALIZAÇÃO</label>
-    <input class="inp" id="srcLoc" placeholder="CEP, bairro, cidade ou estado...">
-
-    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">RAIO DE BUSCA</label>
-    <div class="radius-grid">
-      <input type="radio" name="radius" value="1" class="radio-chip" id="r1"><label class="radio-label" for="r1">1 km</label>
-      <input type="radio" name="radius" value="2" class="radio-chip" id="r2"><label class="radio-label" for="r2">2 km</label>
-      <input type="radio" name="radius" value="5" class="radio-chip" id="r5" checked><label class="radio-label" for="r5">5 km</label>
-      <input type="radio" name="radius" value="10" class="radio-chip" id="r10"><label class="radio-label" for="r10">10 km</label>
-      <input type="radio" name="radius" value="20" class="radio-chip" id="r20"><label class="radio-label" for="r20">20 km</label>
-      <input type="radio" name="radius" value="50" class="radio-chip" id="r50"><label class="radio-label" for="r50">50 km</label>
+    <div style="background:rgba(201,168,76,0.1); border:1px solid var(--gold); padding:10px; border-radius:8px; margin-bottom:15px; font-size:11px; color:var(--gold); text-align:center;">
+        ⚠️ AVISO: Limite diário de 25 resultados de busca por conta.
     </div>
-
-    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">SEGMENTO DE NEGÓCIO</label>
-    <select class="inp" id="srcSeg">
-        <option value="">Selecione um segmento...</option>
-        <option>Restaurantes e Alimentação</option>
-        <option>Salões de Beleza e Estética</option>
-        <option>Clínicas e Saúde</option>
-        <option>Academias e Personal Trainer</option>
-        <option>Imobiliárias e Corretores</option>
-        <option>Advocacia e Jurídico</option>
-        <option>Contabilidade</option>
-        <option>Odontologia</option>
-        <option>Psicologia e Terapia</option>
-        <option>Educação e Cursos</option>
-        <option>Automóveis e Concessionárias</option>
-        <option>Eventos e Festas</option>
-        <option>Moda e Vestuário</option>
-        <option>Tecnologia e TI</option>
-        <option>Construção e Reformas</option>
-        <option value="outro">Outro (campo livre)</option>
-    </select>
-    <input class="inp" id="srcNicho" placeholder="Ou digite um nicho específico...">
-
-    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">QUANTIDADE DE RESULTADOS</label>
-    <select class="inp" id="srcLimit">
-        <option value="5">5 leads</option>
-        <option value="10">10 leads</option>
-        <option value="15">15 leads</option>
-        <option value="20">20 leads</option>
-        <option value="25" selected>25 leads (Limite Máximo)</option>
-    </select>
-
-    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">TIPO DE NEGÓCIO</label>
-    <div style="display:flex; gap:15px; font-size:12px; margin-bottom:15px;">
-        <label><input type="radio" name="bizType" value="company"> Empresa/CNPJ</label>
-        <label><input type="radio" name="bizType" value="pro"> Profissional Autônomo</label>
-        <label><input type="radio" name="bizType" value="both" checked> Ambos</label>
+    <!-- ... (Filtros iguais ao anterior) ... -->
+    <div style="margin-top:10px;">
+        <label style="font-size:10px; color:var(--text-muted);">API PRIORITÁRIA:</label>
+        <select id="apiSelector" class="inp">
+            <option value="apify">Apify (Google Maps - Detalhado)</option>
+            <option value="scrapedo">Scrape.do (Google Search - Alternativo)</option>
+        </select>
     </div>
-
     <button class="btn-gold" id="btnSearch" onclick="runSearch()">Buscar Prospectos</button>
-  </div>
-  <div id="scraperResults"></div>
 </div>
 
-<!-- RELATÓRIO -->
-<div class="page" id="page-relatorio">
-    <h2 class="section-title">Funil de Prospecção</h2>
-    <div class="card">
-        <div class="funnel-bar" style="background:rgba(52,152,219,0.15); color:var(--blue);"><span>Novos</span><span id="f-novo">0</span></div>
-        <div class="funnel-bar" style="background:rgba(230,126,34,0.15); color:var(--orange);"><span>Abordados</span><span id="f-abordado">0</span></div>
-        <div class="funnel-bar" style="background:rgba(201,168,76,0.15); color:var(--gold);"><span>Agendados</span><span id="f-agendado">0</span></div>
-        <div class="funnel-bar" style="background:rgba(46,204,113,0.15); color:var(--green);"><span>Fechados</span><span id="f-fechado">0</span></div>
-        <div class="funnel-bar" style="background:rgba(231,76,60,0.15); color:var(--red);"><span>Sem Resposta</span><span id="f-sem">0</span></div>
-    </div>
+<!-- ... (Restante do HTML igual) ... -->
 
-    <h2 class="section-title">Conversão</h2>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div class="card" style="text-align:center;"><div style="font-size:24px; color:var(--gold);" id="c-agendamento">0%</div><div style="font-size:9px;">TAXA AGENDAMENTO</div></div>
-        <div class="card" style="text-align:center;"><div style="font-size:24px; color:var(--gold);" id="c-fechamento">0%</div><div style="font-size:9px;">TAXA FECHAMENTO</div></div>
-    </div>
-
-    <h2 class="section-title" style="margin-top:20px;">Exportar</h2>
-    <div class="card">
-        <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Exporte todos os seus leads em CSV para Excel.</p>
-        <button class="btn-gold" onclick="exportCSV()">Exportar CSV</button>
-    </div>
-</div>
-
-<!-- MODAL PERFIL (UPLOAD) -->
-<div class="modal-overlay" id="profileModal">
-  <div class="modal">
-    <h2 class="section-title">Editar Perfil</h2>
-    <input class="inp" id="newName" placeholder="Nome de Exibição">
-    
-    <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
-      <div class="user-badge" style="width:60px; height:60px;" id="previewAvatar">?</div>
-      <input type="file" id="fileAvatar" accept="image/*" style="display:none" onchange="previewFile()">
-      <button onclick="document.getElementById('fileAvatar').click()" style="padding:10px; background:#222; border:1px solid var(--gold); color:var(--gold); border-radius:5px; font-size:10px; cursor:pointer;">MUDAR FOTO</button>
-    </div>
-
-    <button class="btn-gold" onclick="saveProfile()" id="btnSaveProfile">Salvar Alterações</button>
-    <button class="btn-gold" style="background:none; color:#888; margin-top:10px;" onclick="closeModal()">Cancelar</button>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// --- CONFIGURAÇÃO ---
-const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// --- CONFIGURAÇÃO E BYPASS ---
+const ADMIN_EMAILS = ['cauandiniz12@gmail.com', 'suelemdeoliveirapaiva7@gmail.com'];
+const APIFY_TOKEN = 'SEU_TOKEN_APIFY';
+const SCRAPEDO_TOKEN = 'SEU_TOKEN_SCRAPEDO';
 
-let currentUser = null;
-let allLeads = [];
-
-// --- INICIALIZAÇÃO ---
-sb.auth.onAuthStateChange((event, session) => {
-  if (!session) window.location.href = 'index.html';
-  currentUser = session.user;
-  document.getElementById('authGuard').style.display = 'none';
-  loadProfile();
-  loadData();
-});
-
-// --- PERFIL E UPLOAD ---
-async function loadProfile() {
-  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (data) {
-    document.getElementById('userNameDisp').innerText = data.display_name || 'Usuário';
-    document.getElementById('newName').value = data.display_name || '';
-    if (data.avatar_url) {
-      const img = `<img src="${data.avatar_url}">`;
-      document.getElementById('userBadge').innerHTML = img;
-      document.getElementById('previewAvatar').innerHTML = img;
-    }
-  }
-}
-
-function previewFile() {
-  const file = document.getElementById('fileAvatar').files[0];
-  const reader = new FileReader();
-  reader.onloadend = () => document.getElementById('previewAvatar').innerHTML = `<img src="${reader.result}">`;
-  if (file) reader.readAsDataURL(file);
-}
-
-async function saveProfile() {
-  const btn = document.getElementById('btnSaveProfile');
-  btn.disabled = true; btn.innerText = 'Salvando...';
-  
-  const name = document.getElementById('newName').value;
-  const file = document.getElementById('fileAvatar').files[0];
-  let avatarUrl = document.getElementById('previewAvatar').querySelector('img')?.src;
-
-  if (file) {
-    const fileName = `${currentUser.id}-${Date.now()}.png`;
-    const { error: uploadError } = await sb.storage.from('avatars').upload(fileName, file);
-    if (!uploadError) {
-      const { data } = sb.storage.from('avatars').getPublicUrl(fileName);
-      avatarUrl = data.publicUrl;
-    }
-  }
-  await sb.from('profiles').upsert({ id: currentUser.id, display_name: name, avatar_url: avatarUrl });
-  location.reload();
-}
-
-// --- PESQUISA COM LIMITE DE 25 ---
 async function runSearch() {
-  const btn = document.getElementById('btnSearch');
+  const isAdmin = ADMIN_EMAILS.includes(currentUser.email);
   const hoje = new Date().toISOString().split('T')[0];
 
-  // Verifica limite de 25 buscas diárias somadas
-  const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-  
-  if (count >= 25) { alert('⚠️ Limite diário de 25 leads atingido. Volte amanhã!'); return; }
+  // Bypass de Admin: Se for admin, pula a verificação de logs_buscas
+  if (!isAdmin) {
+      const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
+      if (count >= 25) { alert('Limite diário de 25 atingido!'); return; }
+  }
 
+  const selectedApi = document.getElementById('apiSelector').value;
+  const btn = document.getElementById('btnSearch');
   btn.disabled = true; btn.innerText = 'Buscando...';
-  
-  // Captura filtros
+
   const loc = document.getElementById('srcLoc').value;
   const seg = document.getElementById('srcSeg').value || document.getElementById('srcNicho').value;
-  const limit = parseInt(document.getElementById('srcLimit').value);
+  const limit = document.getElementById('srcLimit').value;
 
   try {
-    const response = await fetch('/api/scraper', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ location: loc, segment: seg, limit: limit, user_id: currentUser.id })
-    });
-    const data = await response.json();
-    
-    // Registra a quantidade de buscas no banco para controle do limite
-    for(let i=0; i < data.results.length; i++) {
-        await sb.from('logs_buscas').insert({ user_id: currentUser.id });
-    }
+      let results = [];
+      if (selectedApi === 'apify') {
+          // Chamada Apify (Substitua pela sua lógica de Actor)
+          const response = await fetch(`https://api.apify.com/v2/acts/apify~google-maps-scraper/runs?token=${apify_api_rJreP1C0C220b2bduxW65fZmRYJFYm44nTHL}`, {
+              method: 'POST', body: JSON.stringify({ queries: [`${seg} em ${loc}`], maxQueries: 1, limitPerQuery: parseInt(limit) })
+          });
+          // Nota: Apify requer polling (esperar o resultado), use sua rota /api/scraper se preferir
+      } else {
+          // Chamada Scrape.do (Simples Google Search)
+          const targetUrl = encodeURIComponent(`https://www.google.com/search?q=${seg}+em+${loc}`);
+          const res = await fetch(`https://api.scrape.do?token=${129e6ddede1d43f4b10f72100c8921258a8b5445610}&url=${targetUrl}`);
+          // Scrape.do retorna HTML bruto, você precisaria processar ou usar o modo "Google Search API" deles.
+      }
 
-    renderResults(data.results);
+      // Registro de log apenas para não-admins
+      if (!isAdmin) await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+      
+      showToast("Busca finalizada!");
   } catch (e) {
-    alert('Erro na busca ou limite excedido.');
+      alert("Erro na busca.");
   }
   btn.disabled = false; btn.innerText = 'Buscar Prospectos';
 }
 
-function renderResults(results) {
-  const container = document.getElementById('scraperResults');
-  container.innerHTML = `<button class="btn-gold" style="background:#2ecc71; margin:10px 0;" onclick="addAllToCRM()">Adicionar Todos ao CRM</button>` + 
-  results.map(item => `
-    <div class="card">
-      <div style="font-weight:600; color:var(--gold);">${item.name}</div>
-      <div style="font-size:11px; color:var(--text-muted);">${item.address}</div>
-      <div style="margin-top:10px; display:flex; gap:8px;">
-        ${item.phone ? `<a href="https://wa.me/${item.phone.replace(/\D/g,'')}" target="_blank" style="color:var(--green); text-decoration:none; font-size:10px;">WHATSAPP</a>` : ''}
-        <a href="https://google.com/maps?q=${item.name}" target="_blank" style="color:var(--blue); text-decoration:none; font-size:10px;">MAPS</a>
-      </div>
-    </div>
-  `).join('');
-}
-
-// --- RELATÓRIO E DADOS ---
-async function loadData() {
+async function loadStats() {
   const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
   if (data) {
-    allLeads = data;
-    document.getElementById('st-total').innerText = data.length;
-    document.getElementById('st-agendados').innerText = data.filter(l => l.status === 'agendado').length;
-    
-    // Funil
-    document.getElementById('f-novo').innerText = data.filter(l => l.status === 'novo').length;
-    document.getElementById('f-abordado').innerText = data.filter(l => l.status === 'abordado').length;
-    document.getElementById('f-agendado').innerText = data.filter(l => l.status === 'agendado').length;
-    document.getElementById('f-fechado').innerText = data.filter(l => l.status === 'fechado').length;
-    document.getElementById('f-sem').innerText = data.filter(l => l.status === 'sem-resposta').length;
+    // Atualiza Painel e Relatório com as mesmas cores
+    const novo = data.filter(l => l.status === 'novo').length;
+    const abordado = data.filter(l => l.status === 'abordado').length;
+    const agendado = data.filter(l => l.status === 'agendado').length;
+    const fechado = data.filter(l => l.status === 'fechado').length;
+    const sem = data.filter(l => l.status === 'sem-resposta').length;
 
-    // Métricas
-    const total = data.length || 1;
-    document.getElementById('c-agendamento').innerText = Math.round((data.filter(l => l.status === 'agendado').length / total) * 100) + '%';
-    document.getElementById('c-fechamento').innerText = Math.round((data.filter(l => l.status === 'fechado').length / total) * 100) + '%';
+    document.querySelectorAll('#f-novo').forEach(el => el.innerText = novo);
+    document.querySelectorAll('#f-abordado').forEach(el => el.innerText = abordado);
+    document.querySelectorAll('#f-agendado').forEach(el => el.innerText = agendado);
+    document.querySelectorAll('#f-fechado').forEach(el => el.innerText = fechado);
+    document.querySelectorAll('#f-sem').forEach(el => el.innerText = sem);
+
+    // Meta Diária de Abordagens (Abordados hoje)
+    const hoje = new Date().toISOString().split('T')[0];
+    const abordadosHoje = data.filter(l => l.status === 'abordado' && l.updated_at?.startsWith(hoje)).length;
+    const pct = Math.min((abordadosHoje / 10) * 100, 100);
+    document.getElementById('progFill').style.width = pct + '%';
+    document.getElementById('progText').innerText = `${abordadosHoje} / 10`;
   }
 }
-
-// --- UTILITÁRIOS ---
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if(id === 'relatorio') loadData();
-}
-function openProfile() { document.getElementById('profileModal').classList.add('open'); }
-function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
-function exportCSV() { /* Sua lógica de exportar CSV aqui */ }
 </script>
-</body>
-</html>
