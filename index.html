@@ -176,23 +176,23 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   // Detecta se o usuário clicou no link de recuperação de senha
 sb.auth.onAuthStateChange((event, session) => {
-  // Caso 1: O usuário clicou no link de recuperação de senha do e-mail
+  // Se o link de recuperação for clicado
   if (event === "PASSWORD_RECOVERY") {
-    console.log("Recuperação detectada, redirecionando...");
     window.location.href = "recovery.html";
     return;
   }
 
-  // Caso 2: Login normal (Só redireciona se não for evento de recuperação)
+  // Login normal
   if (session && event === "SIGNED_IN") {
-    // Pequena verificação extra na URL para ter certeza que não é recuperação
-    if (!window.location.hash.includes("type=recovery")) {
-      window.location.href = "app.html";
-    } else {
-      window.location.href = "recovery.html";
-    }
+     // Verifica se o hash na URL contém indicação de recuperação
+     if (window.location.hash.includes("type=recovery") || window.location.hash.includes("recovery")) {
+         window.location.href = "recovery.html";
+     } else {
+         window.location.href = "app.html";
+     }
   }
 });
+  
 function showMsg(text, type){
   var el = document.getElementById('msg');
   el.textContent = text;
