@@ -11,15 +11,15 @@
     .logo { font-family: 'Bebas Neue'; font-size: 24px; color: var(--gold); letter-spacing: 2px; }
     .user-badge { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--gold); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #222; }
     .user-badge img { width: 100%; height: 100%; object-fit: cover; }
-    .nav { display: flex; background: #111; border-bottom: 1px solid #222; }
-    .nav-btn { flex: 1; padding: 15px; font-size: 10px; font-weight: bold; color: #666; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; }
+    .nav { display: flex; background: #111; border-bottom: 1px solid #222; overflow-x: auto; }
+    .nav-btn { flex: 1; padding: 15px; font-size: 10px; font-weight: bold; color: #666; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
     .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
     .page { display: none; padding: 20px; }
     .page.active { display: block; }
     .card { background: var(--card); border: 1px solid #222; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
     .stat-val { font-family: 'Bebas Neue'; font-size: 28px; }
-    .inp { width: 100%; padding: 12px; background: #111; border: 1px solid #333; color: #fff; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
-    .btn-gold { width: 100%; padding: 14px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .inp { width: 100%; padding: 12px; background: #111; border: 1px solid #333; color: #fff; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; outline: none; }
+    .btn-gold { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-gold:disabled { opacity: 0.5; }
     .spinner { width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.1); border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -31,7 +31,7 @@
 </head>
 <body>
 
-<div id="authGuard" style="position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;">Carregando...</div>
+<div id="authGuard" style="position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;">Carregando Orus...</div>
 
 <div class="topbar">
     <div class="logo">ORUS</div>
@@ -45,17 +45,17 @@
     <button class="nav-btn" onclick="showPage('relatorio', this)">Relatório</button>
 </nav>
 
-<!-- DASHBOARD -->
+<!-- PAINEL -->
 <div class="page active" id="page-dashboard">
     <div style="margin-bottom: 20px;"><span style="font-size: 10px; color: #666;">BOM TRABALHO,</span><h1 id="userNameDisp" style="margin:0; font-size: 22px;">...</h1></div>
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <div class="card" style="border-left: 3px solid var(--blue);"><div class="stat-val" id="dash-novo">0</div><div style="font-size:9px;">NOVOS</div></div>
-        <div class="card" style="border-left: 3px solid var(--orange);"><div class="stat-val" id="dash-abordado">0</div><div style="font-size:9px;">ABORDADOS</div></div>
-        <div class="card" style="border-left: 3px solid var(--gold);"><div class="stat-val" id="dash-agendado">0</div><div style="font-size:9px;">AGENDADOS</div></div>
-        <div class="card" style="border-left: 3px solid var(--green);"><div class="stat-val" id="dash-fechado">0</div><div style="font-size:9px;">FECHADOS</div></div>
+        <div class="card" style="border-left: 3px solid var(--blue);"><div class="stat-val" id="dash-novo">0</div><div style="font-size:9px; color:var(--blue);">NOVOS</div></div>
+        <div class="card" style="border-left: 3px solid var(--orange);"><div class="stat-val" id="dash-abordado">0</div><div style="font-size:9px; color:var(--orange);">ABORDADOS</div></div>
+        <div class="card" style="border-left: 3px solid var(--gold);"><div class="stat-val" id="dash-agendado">0</div><div style="font-size:9px; color:var(--gold);">AGENDADOS</div></div>
+        <div class="card" style="border-left: 3px solid var(--green);"><div class="stat-val" id="dash-fechado">0</div><div style="font-size:9px; color:var(--green);">FECHADOS</div></div>
     </div>
     <div class="card" style="margin-top:10px;">
-        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:5px;"><span>META (10 ABORDAGENS)</span><span id="progText">0/10</span></div>
+        <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:5px;"><span>META DIÁRIA (10 ABORDAGENS)</span><span id="progText">0/10</span></div>
         <div style="height:6px; background:#222; border-radius:3px; overflow:hidden;"><div id="progFill" style="height:100%; background:var(--gold); width:0%;"></div></div>
     </div>
     <h2 style="font-family:'Bebas Neue'; color:var(--gold); margin-top:20px; font-size:18px;">ATIVIDADE RECENTE</h2>
@@ -64,44 +64,49 @@
 
 <!-- LEADS -->
 <div class="page" id="page-leads">
-    <input class="inp" id="searchLeadsInp" placeholder="Filtrar por nome..." oninput="renderLeads()">
+    <input class="inp" id="searchLeadsInp" placeholder="Buscar por nome..." oninput="renderLeads()">
     <div id="leadsList"></div>
 </div>
 
-<!-- SEARCH -->
+<!-- ORUSSEARCH -->
 <div class="page" id="page-scraper">
-    <div style="background:rgba(201,168,76,0.1); border:1px solid var(--gold); padding:10px; border-radius:8px; margin-bottom:15px; font-size:10px; color:var(--gold); text-align:center;">⚠️ Limite diário: 25 resultados.</div>
+    <div style="background:rgba(201,168,76,0.1); border:1px solid var(--gold); padding:10px; border-radius:8px; margin-bottom:15px; font-size:10px; color:var(--gold); text-align:center;">
+        ⚠️ Limite diário: 25 resultados de pesquisa por conta.
+    </div>
     <div class="card">
+        <label style="font-size:9px; color:var(--gold);">LOCALIZAÇÃO</label>
         <input class="inp" id="srcLoc" placeholder="Cidade ou Bairro">
+        <label style="font-size:9px; color:var(--gold);">SERVIÇO</label>
         <select class="inp" id="apiChoice">
             <option value="apify">Apify (Google Maps)</option>
-            <option value="scrapedo">Scrape.do (Alternativa)</option>
+            <option value="scrapedo">Scrape.do (Google Search)</option>
         </select>
-        <input class="inp" id="srcSeg" placeholder="Segmento (Ex: Dentista)">
+        <label style="font-size:9px; color:var(--gold);">SEGMENTO</label>
+        <input class="inp" id="srcSeg" placeholder="Ex: Dentista">
+        <label style="font-size:9px; color:var(--gold);">QUANTIDADE</label>
         <select class="inp" id="srcLimit"><option value="5">5 leads</option><option value="15">15 leads</option><option value="25" selected>25 leads</option></select>
         <button class="btn-gold" id="btnSearch" onclick="runSearch()">BUSCAR PROSPECTOS</button>
     </div>
     <div id="scraperResults"></div>
 </div>
 
-<!-- RELATORIO -->
+<!-- RELATÓRIO -->
 <div class="page" id="page-relatorio">
-    <h2 style="font-family:'Bebas Neue'; color:var(--gold); font-size:18px;">MÉTRICAS</h2>
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <div class="card">AGENDAMENTO<div id="c-agendamento" style="font-size:20px; color:var(--gold);">0%</div></div>
-        <div class="card">FECHAMENTO<div id="c-fechamento" style="font-size:20px; color:var(--gold);">0%</div></div>
+        <div class="card">AGENDAMENTO<div id="c-agendamento" style="font-size:24px; color:var(--gold);">0%</div></div>
+        <div class="card">FECHAMENTO<div id="c-fechamento" style="font-size:24px; color:var(--gold);">0%</div></div>
     </div>
     <button class="btn-gold" onclick="exportCSV()">EXPORTAR CSV</button>
 </div>
 
-<!-- PERFIL -->
+<!-- MODAL PERFIL -->
 <div class="modal-overlay" id="profileModal">
-    <div class="modal" style="background:#111; padding:20px; border:1px solid var(--gold); border-radius:15px; width:100%; max-width:320px; text-align:center;">
-        <h2 style="font-family:'Bebas Neue'; color:var(--gold);">MEU PERFIL</h2>
-        <div id="displayUserEmail" style="font-size:10px; color:#666; margin-bottom:15px;">...</div>
-        <input class="inp" id="newName" placeholder="Nome">
-        <input class="inp" id="newAvatar" placeholder="Link da foto (URL)">
-        <button class="btn-gold" onclick="saveProfile()">SALVAR</button>
+    <div class="modal" style="background:#111; padding:25px; border:1px solid var(--gold); border-radius:15px; width:90%; max-width:350px; text-align:center;">
+        <h2 style="font-family:'Bebas Neue'; color:var(--gold); margin:0;">MEU PERFIL</h2>
+        <div id="displayUserEmail" style="font-size:10px; color:#555; margin-bottom:15px;">...</div>
+        <input class="inp" id="newName" placeholder="Seu nome">
+        <input class="inp" id="newAvatar" placeholder="URL da foto">
+        <button class="btn-gold" onclick="saveProfile()" id="btnSaveProfile">SALVAR</button>
         <button onclick="closeModal()" style="background:none; border:none; color:#444; margin-top:10px; cursor:pointer;">FECHAR</button>
         <button onclick="sb.auth.signOut()" style="color:var(--red); background:none; border:none; margin-top:20px; cursor:pointer; font-size:10px;">SAIR DA CONTA</button>
     </div>
@@ -125,9 +130,10 @@ sb.auth.getSession().then(({ data }) => {
 async function runSearch() {
     const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
     const hoje = new Date().toISOString().split('T')[0];
+
     if (!isAdmin) {
         const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-        if (count >= 25) return showToast("🚫 Limite diário atingido!");
+        if (count >= 25) return showToast("🚫 Limite diário de 25 atingido!");
     }
 
     const btn = document.getElementById('btnSearch');
@@ -140,7 +146,12 @@ async function runSearch() {
         if (error) throw error;
         lastResults = data.results;
         renderResults(data.results);
-        if (!isAdmin) lastResults.forEach(() => sb.from('logs_buscas').insert({ user_id: currentUser.id }).then());
+        
+        if (!isAdmin) {
+            for (let i=0; i < lastResults.length; i++) {
+                await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+            }
+        }
         showToast(`${lastResults.length} leads carregados!`);
     } catch (e) { showToast("Erro na busca."); }
     btn.disabled = false; btn.innerHTML = "BUSCAR PROSPECTOS";
@@ -163,8 +174,10 @@ function renderResults(results) {
 
 async function addToCRM(idx) {
     const l = lastResults[idx];
+    const btn = document.getElementById(`btn-add-${idx}`);
+    btn.disabled = true; btn.innerHTML = "...";
     const { error } = await sb.from('leads').insert({ user_id: currentUser.id, name: l.name, phone: l.phone, addr: l.address, status: 'novo' });
-    if (!error) { showToast("Salvo!"); document.getElementById(`btn-add-${idx}`).style.background="#2ecc71"; document.getElementById(`btn-add-${idx}`).innerText="✓"; loadData(); }
+    if (!error) { btn.style.background = "#2ecc71"; btn.innerHTML = "✓"; loadData(); }
 }
 
 async function addAllToCRM() {
@@ -178,27 +191,28 @@ async function loadData() {
     if (!data) return;
     const stats = { novo: data.filter(l => l.status === 'novo').length, abordado: data.filter(l => l.status === 'abordado').length, agendado: data.filter(l => l.status === 'agendado').length, fechado: data.filter(l => l.status === 'fechado').length };
     
-    const ids = ['novo', 'abordado', 'agendado', 'fechado'];
-    ids.forEach(id => { if(document.getElementById('dash-'+id)) document.getElementById('dash-'+id).innerText = stats[id]; });
+    ['novo', 'abordado', 'agendado', 'fechado'].forEach(id => { if(document.getElementById('dash-'+id)) document.getElementById('dash-'+id).innerText = stats[id]; });
 
     const hoje = new Date().toISOString().split('T')[0];
     const hojeAbordados = data.filter(l => l.status === 'abordado' && l.created_at.startsWith(hoje)).length;
     document.getElementById('progText').innerText = `${hojeAbordados}/10`;
     document.getElementById('progFill').style.width = Math.min((hojeAbordados/10)*100, 100) + '%';
     
-    document.getElementById('recentLeads').innerHTML = data.slice(-3).map(l => `<div class="card" style="font-size:11px;"><b>${l.name}</b></div>`).join('');
+    const total = data.length || 1;
+    document.getElementById('c-agendamento').innerText = Math.round((stats.agendado/total)*100) + '%';
+    document.getElementById('c-fechamento').innerText = Math.round((stats.fechado/total)*100) + '%';
+    document.getElementById('recentLeads').innerHTML = data.slice(0, 3).map(l => `<div class="card" style="font-size:11px;"><b>${l.name}</b></div>`).join('');
 }
 
 async function renderLeads() {
     const container = document.getElementById('leadsList');
     const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
-    if (!data || data.length === 0) return container.innerHTML = '<p style="text-align:center; color:#444; padding:40px;">Vazio.</p>';
-    
+    if (!data || data.length === 0) return container.innerHTML = '<p style="text-align:center; padding:40px; color:#444;">Vazio.</p>';
     container.innerHTML = data.map(l => `
         <div class="card" style="border-left: 3px solid ${getStatusColor(l.status)}">
             <b>${l.name}</b>
             <div style="display:flex; gap:10px; margin-top:8px;">
-                <select onchange="updateLeadStatus('${l.id}', this.value)" style="background:#222; color:#fff; border:1px solid #333; font-size:9px; padding:3px;">
+                <select onchange="updateLeadStatus('${l.id}', this.value)" style="background:#222; color:#fff; border:1px solid #333; font-size:9px;">
                     <option value="novo" ${l.status==='novo'?'selected':''}>Novo</option>
                     <option value="abordado" ${l.status==='abordado'?'selected':''}>Abordado</option>
                     <option value="agendado" ${l.status==='agendado'?'selected':''}>Agendado</option>
@@ -212,7 +226,6 @@ async function renderLeads() {
 
 async function updateLeadStatus(id, s) { await sb.from('leads').update({ status: s }).eq('id', id); showToast("Atualizado"); loadData(); renderLeads(); }
 async function deleteLead(id) { if(confirm("Excluir?")) { await sb.from('leads').delete().eq('id', id); renderLeads(); loadData(); } }
-
 function getStatusColor(s) { return { novo: '#3498db', abordado: '#e67e22', agendado: '#f1c40f', fechado: '#2ecc71' }[s] || '#444'; }
 function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
 function showPage(id, b) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active'); if(id==='leads') renderLeads(); }
@@ -223,7 +236,7 @@ async function loadProfile() {
     if(data) { document.getElementById('userNameDisp').innerText = data.display_name || currentUser.email.split('@')[0]; if(data.avatar_url) document.getElementById('userBadge').innerHTML = `<img src="${data.avatar_url}">`; }
 }
 async function saveProfile() { await sb.from('profiles').upsert({ id: currentUser.id, display_name: document.getElementById('newName').value, avatar_url: document.getElementById('newAvatar').value }); location.reload(); }
-async function exportCSV() { /* lógica csv */ }
+async function exportCSV() { /* lógica */ }
 </script>
 </body>
 </html>
