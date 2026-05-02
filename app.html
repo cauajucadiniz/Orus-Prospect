@@ -161,35 +161,86 @@ body { background: var(--black); color: var(--text); font-family: 'DM Sans', san
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
-const SUPABASE_KEY = 'SUA_ANON_KEY';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_EMAILS = ['cauandiniz12@gmail.com', 'suelemdeoliveirapaiva7@gmail.com'];
 let currentUser = null;
 let lastResults = [];
 
-// INICIALIZAÇÃO
-sb.auth.onAuthStateChange((event, session) => {
-  if (!session) window.location.href = 'index.html';
-  currentUser = session.user;
-  document.getElementById('authGuard').style.display = 'none';
-  loadProfile();
-  loadData();
+// 1. INICIALIZAÇÃO SEGURA
+sb.auth.getSession().then(({ data }) => {
+  if (!data.session) {
+    window.location.href = 'index.html';
+  } else {
+    currentUser = data.session.user;
+    document.getElementById('authGuard').style.display = 'none';
+    loadProfile(); // Função agora definida corretamente abaixo
+    loadData();
+  }
 });
 
-// FUNÇÃO DE BUSCA (REVISADA)
+// 2. FUNÇÕES DE PERFIL
+async function loadProfile() {
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  const userEmailDisp = document.getElementById('displayUserEmail');
+  const nameDisp = document.getElementById('userNameDisp');
+  
+  if (userEmailDisp) userEmailDisp.innerText = currentUser.email;
+
+  if (data) {
+    if (nameDisp) nameDisp.innerText = data.display_name || 'Usuário';
+    document.getElementById('newName').value = data.display_name || '';
+    if (data.avatar_url) {
+      const img = `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
+      document.getElementById('userBadge').innerHTML = img;
+      document.getElementById('previewAvatar').innerHTML = img;
+    }
+  } else {
+     if (nameDisp) nameDisp.innerText = currentUser.email.split('@')[0];
+  }
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('btnSaveProfile');
+  btn.disabled = true; btn.innerText = 'Salvando...';
+  const name = document.getElementById('newName').value;
+  const file = document.getElementById('fileAvatar').files[0];
+  let avatarUrl = document.getElementById('previewAvatar').querySelector('img')?.src;
+
+  if (file) {
+    const fileName = `${currentUser.id}-${Date.now()}.png`;
+    const { error: uploadError } = await sb.storage.from('avatars').upload(fileName, file);
+    if (!uploadError) {
+      const { data } = sb.storage.from('avatars').getPublicUrl(fileName);
+      avatarUrl = data.publicUrl;
+    }
+  }
+  await sb.from('profiles').upsert({ id: currentUser.id, display_name: name, avatar_url: avatarUrl });
+  showToast("Perfil atualizado!");
+  btn.disabled = false; btn.innerText = 'Salvar Alterações';
+  loadProfile();
+}
+
+function previewFile() {
+  const file = document.getElementById('fileAvatar').files[0];
+  const reader = new FileReader();
+  reader.onloadend = () => document.getElementById('previewAvatar').innerHTML = `<img src="${reader.result}" style="width:100%;height:100%;object-fit:cover;">`;
+  if (file) reader.readAsDataURL(file);
+}
+
+// 3. BUSCA E CRM (Lógica Async para evitar Erro 500)
 async function runSearch() {
   const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   const hoje = new Date().toISOString().split('T')[0];
 
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 25) return showToast("🚫 Limite de 25 leads atingido!");
+    if (count >= 25) return showToast("🚫 Limite diário atingido!");
   }
 
   const btn = document.getElementById('btnSearch');
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
 
   const payload = {
     apiChoice: document.getElementById('apiChoice').value,
@@ -201,11 +252,10 @@ async function runSearch() {
   try {
     const response = await fetch('/api/search', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
     const data = await response.json();
-
     if (data.type === 'direct') {
       processResults(data.results, isAdmin);
     } else {
-      showToast("Robô Orus Iniciado...");
+      showToast("Pesquisa iniciada...");
       pollApify(data.runId, isAdmin);
     }
   } catch (e) {
@@ -218,15 +268,15 @@ async function pollApify(runId, isAdmin) {
   let finished = false;
   while(!finished) {
     await new Promise(r => setTimeout(r, 4000));
-    const res = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=SEU_TOKEN_APIFY_AQUI`);
+    const res = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=apify_api_J5pSN8eifxP8t7bqZ5x5CdIJC64wvj19Q8Cm`);
     const data = await res.json();
     if (data.data.status === 'SUCCEEDED') {
       finished = true;
-      const itemsRes = await fetch(`https://api.apify.com/v2/datasets/${data.data.defaultDatasetId}/items?token=SEU_TOKEN_APIFY_AQUI`);
+      const itemsRes = await fetch(`https://api.apify.com/v2/datasets/${data.data.defaultDatasetId}/items?token=apify_api_J5pSN8eifxP8t7bqZ5x5CdIJC64wvj19Q8Cm`);
       const items = await itemsRes.json();
       processResults(items.map(i => ({ name: i.title || i.name, address: i.address || i.fullAddress, phone: i.phone || '' })), isAdmin);
     } else if (data.data.status === 'FAILED') {
-      finished = true; showToast("Erro no Apify.");
+      finished = true; showToast("Erro no robô.");
     }
   }
   document.getElementById('btnSearch').disabled = false;
@@ -235,70 +285,41 @@ async function pollApify(runId, isAdmin) {
 
 function processResults(results, isAdmin) {
   lastResults = results;
-  if (!isAdmin) results.forEach(() => sb.from('logs_buscas').insert({ user_id: currentUser.id }).then());
+  if (!isAdmin) results.forEach(() => sb.from('leads').insert({ user_id: currentUser.id, name: "Log Busca", status: 'novo' }).then()); // Log simplificado
   renderResults(results);
-  showToast(`${results.length} Leads Carregados!`);
 }
 
-// RENDERIZAÇÃO E CRM
-function renderResults(results) {
-  const container = document.getElementById('scraperResults');
-  container.innerHTML = `<button id="btnAllToCRM" class="btn-gold" style="background:#2ecc71; margin:10px 0;" onclick="addAllToCRM()">Adicionar Todos ao CRM</button>` + 
-  results.map((item, idx) => `
-    <div class="card">
-      <div style="font-weight:600; color:var(--gold);">${item.name}</div>
-      <div style="font-size:11px; color:var(--text-muted);">${item.address}</div>
-      <button id="btn-add-${idx}" onclick="addToSingleCRM(${idx})" style="background:var(--gold); color:#000; border:none; padding:5px 10px; border-radius:4px; font-size:10px; font-weight:bold; margin-top:10px;">+ CRM</button>
-    </div>
-  `).join('');
-}
-
-async function addToSingleCRM(idx) {
-  const lead = lastResults[idx];
-  const btn = document.getElementById(`btn-add-${idx}`);
-  btn.disabled = true; btn.innerHTML = "Salvando...";
-  await sb.from('leads').insert({ user_id: currentUser.id, name: lead.name, phone: lead.phone, addr: lead.address, status: 'novo' });
-  btn.style.background = "#2ecc71"; btn.innerHTML = "✓ SALVO";
-  loadData();
-}
-
+// 4. DATA LOAD (DASHBOARD)
 async function loadData() {
-  const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+  const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
   if (!data) return;
+  const stats = { 
+    novo: data.filter(l => l.status === 'novo').length, 
+    abordado: data.filter(l => l.status === 'abordado').length, 
+    agendado: data.filter(l => l.status === 'agendado').length, 
+    fechado: data.filter(l => l.status === 'fechado').length 
+  };
   
-  const stats = { novo: data.filter(l => l.status === 'novo').length, abordado: data.filter(l => l.status === 'abordado').length, agendado: data.filter(l => l.status === 'agendado').length, fechado: data.filter(l => l.status === 'fechado').length };
-  
-  document.getElementById('dash-novo').innerText = stats.novo;
-  document.getElementById('dash-abordado').innerText = stats.abordado;
-  document.getElementById('dash-agendado').innerText = stats.agendado;
-  document.getElementById('dash-fechado').innerText = stats.fechado;
-
-  // Meta 10
-  const hoje = new Date().toISOString().split('T')[0];
-  const hojeAbordados = data.filter(l => l.status === 'abordado' && l.created_at.startsWith(hoje)).length;
-  document.getElementById('progText').innerText = `${hojeAbordados} / 10`;
-  document.getElementById('progFill').style.width = Math.min((hojeAbordados / 10) * 100, 100) + '%';
-  
-  // Atividade Recente
-  document.getElementById('recentLeads').innerHTML = data.slice(0, 3).map(l => `<div class="card" style="font-size:12px;"><b>${l.name}</b> - ${l.status.toUpperCase()}</div>`).join('');
+  const setIf = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
+  setIf('dash-novo', stats.novo); setIf('dash-abordado', stats.abordado);
+  setIf('dash-agendado', stats.agendado); setIf('dash-fechado', stats.fechado);
+  setIf('f-novo', stats.novo); setIf('f-abordado', stats.abordado);
+  setIf('f-agendado', stats.agendado); setIf('f-fechado', stats.fechado);
 }
 
-// UTILITÁRIOS
+// 5. UTILITÁRIOS
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.innerText = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
-
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (id === 'leads') renderLeads();
 }
-
-function openProfile() { document.getElementById('profileModal').classList.add('open'); document.getElementById('displayUserEmail').innerText = currentUser.email; }
+function openProfile() { document.getElementById('profileModal').classList.add('open'); }
 function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
 </script>
 </body>
