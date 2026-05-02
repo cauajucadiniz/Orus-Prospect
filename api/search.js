@@ -1,13 +1,12 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Apenas POST' });
-
   const { apiChoice, loc, seg, limit } = req.body;
   const APIFY_TOKEN = process.env.APIFY_TOKEN;
   const SCRAPEDO_TOKEN = process.env.SCRAPEDO_TOKEN;
 
   try {
     if (apiChoice === 'apify') {
-      // APENAS INICIA A BUSCA (Não espera o resultado para não dar timeout)
+      // INICIA O ROBÔ (Não espera o fim, apenas pega o ID da corrida)
       const response = await fetch(`https://api.apify.com/v2/acts/apify~google-maps-scraper/runs?token=${APIFY_TOKEN}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -18,11 +17,10 @@ export default async function handler(req, res) {
         })
       });
       const data = await response.json();
-      // Devolve o runId para o frontend monitorar
       return res.status(200).json({ runId: data.data.id, type: 'apify' });
 
     } else {
-      // SCRAPE.DO (Google Search) - Este costuma ser rápido o suficiente para ser síncrono
+      // SCRAPE.DO - Google Search API (Geralmente rápida o suficiente)
       const query = encodeURIComponent(`${seg} em ${loc}`);
       const response = await fetch(`https://api.scrape.do/google?token=${SCRAPEDO_TOKEN}&q=${query}`);
       const data = await response.json();
@@ -33,7 +31,6 @@ export default async function handler(req, res) {
         phone: '', 
         website: i.link
       }));
-
       return res.status(200).json({ results, type: 'direct' });
     }
   } catch (error) {
