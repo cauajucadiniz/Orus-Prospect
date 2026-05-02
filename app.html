@@ -323,10 +323,15 @@ async function runSearch() {
   try {
     // Chamada para o seu "Túnel Seguro" na Vercel
     const response = await fetch('/api/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    apiChoice: document.getElementById('apiChoice').value,
+    loc: document.getElementById('srcLoc').value, // Deve ter esse ID no seu HTML
+    seg: document.getElementById('srcSeg').value || document.getElementById('srcNicho').value,
+    limit: document.getElementById('srcLimit').value
+  })
+});
 
     const data = await response.json();
 
