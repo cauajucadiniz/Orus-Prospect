@@ -1,51 +1,56 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Apenas POST' });
+
   const { apiChoice, loc, seg, limit } = req.body;
   const APIFY_TOKEN = process.env.APIFY_TOKEN;
   const SCRAPEDO_TOKEN = process.env.SCRAPEDO_TOKEN;
 
-  try {
-    let results = [];
-    if (apiChoice === 'apify') {
-      const start = await fetch(`https://api.apify.com/v2/acts/apify~google-maps-scraper/runs?token=${APIFY_TOKEN}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ queries: [`${seg} em ${loc}`], maxQueries: 1, limitPerQuery: parseInt(limit) })
-      });
-      const startData = await start.json();
-      if (!startData?.data?.id) throw new Error('Token Apify Inválido ou Saldo Esgotado');
+  if (!APIFY_TOKEN || !SCRAPEDO_TOKEN) {
+    return res.status(500).json({ error: "Tokens não configurados na Vercel." });
+  }
 
-      // Poll simplificado para evitar timeout na Vercel
-      let status = 'RUNNING';
-      let runId = startData.data.id;
-      for (let i = 0; i < 5; i++) { // Tenta por 15 segundos
-        await new Promise(r => setTimeout(r, 3000));
-        const check = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`);
-        const checkData = await check.json();
-        if (checkData?.data?.status === 'SUCCEEDED') {
-          const dsRes = await fetch(`https://api.apify.com/v2/datasets/${checkData.data.defaultDatasetId}/items?token=${APIFY_TOKEN}`);
-          results = await dsRes.json();
-          break;
+  try {
+    let rawResults = [];
+
+    if (apiChoice === 'apify') {
+      // Método "Run and Wait" (mais rápido e estável para Vercel)
+      const response = await fetch(
+        `https://api.apify.com/v2/acts/apify~google-maps-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            queries: [`${seg} em ${loc}`],
+            maxQueries: 1,
+            limitPerQuery: parseInt(limit) || 5,
+            zoom: 12
+          })
         }
-      }
+      );
+
+      if (!response.ok) throw new Error("Apify recusou a busca. Verifique saldo/token.");
+      rawResults = await response.json();
+
     } else {
-      // SCRAPE.DO - Google Search API
-      const q = encodeURIComponent(`${seg} em ${loc}`);
-      const response = await fetch(`https://api.scrape.do/google?token=${SCRAPEDO_TOKEN}&q=${q}`);
+      // Scrape.do (Google Search)
+      const target = encodeURIComponent(`${seg} em ${loc}`);
+      const response = await fetch(`https://api.scrape.do/google?token=${SCRAPEDO_TOKEN}&q=${target}`);
       const data = await response.json();
-      results = (data.organic_results || []).slice(0, limit);
+      rawResults = data.organic_results || [];
     }
 
-    // PADRONIZAÇÃO FINAL (Garante que o site entenda ambos)
-    const formatted = results.map(i => ({
-      name: i.title || i.name || 'Sem nome',
-      address: i.address || i.snippet || 'Localização não informada',
-      phone: i.phone || i.phoneNumber || '',
-      website: i.website || i.link || ''
+    // Padronização absoluta (Garante que o app.html sempre receba os mesmos nomes)
+    const finalData = rawResults.slice(0, limit).map(i => ({
+      name: i.title || i.name || "Empresa sem nome",
+      address: i.address || i.snippet || i.fullAddress || "Endereço indisponível",
+      phone: i.phone || i.phoneNumber || "",
+      website: i.website || i.url || i.link || ""
     }));
 
-    return res.status(200).json({ results: formatted });
+    return res.status(200).json({ results: finalData });
+
   } catch (error) {
+    console.error("Erro no Servidor:", error.message);
     return res.status(500).json({ error: error.message });
   }
 }
