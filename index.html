@@ -222,18 +222,19 @@ async function doLogin(){
 }
 
 async function doForgot(){
-  hideMsg();
   var email = document.getElementById('forgotEmail').value.trim();
-  if(!email){ showMsg('Digite seu email.', 'error'); return; }
+  if(!email) return showMsg('Digite seu email.', 'error');
+  
   setLoading('forgotBtn', true);
   
+  // CORREÇÃO AQUI: O link deve apontar para o recovery.html
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://orus-prospect.vercel.app/recovery.html', // LINK OBRIGATÓRIO
+    redirectTo: 'https://orus-prospect.vercel.app/recovery.html',
   });
 
   setLoading('forgotBtn', false);
-  if(error) showMsg('Erro ao enviar link.', 'error');
-  else showMsg('Link enviado! Verifique seu email.', 'success');
+  if(error) showMsg('Erro ao enviar e-mail.', 'error');
+  else showMsg('E-mail enviado! Verifique sua caixa de entrada.', 'success');
 }
 
 function showForgot(){
