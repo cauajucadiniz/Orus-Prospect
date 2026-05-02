@@ -195,6 +195,68 @@ sb.auth.onAuthStateChange((event, session) => {
   loadData();
 });
 
+  import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  // 1. Trata requisição de segurança (CORS)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  try {
+    const { apiChoice, loc, seg, limit } = await req.json()
+    const APIFY_TOKEN = Deno.env.get('APIFY_TOKEN')
+    const SCRAPEDO_TOKEN = Deno.env.get('SCRAPEDO_TOKEN')
+
+    let results = []
+
+    if (apiChoice === 'apify') {
+      // Chamada Síncrona do Apify (Espera o resultado)
+      const res = await fetch(
+        `https://api.apify.com/v2/acts/apify~google-maps-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            queries: [`${seg} em ${loc}`],
+            maxQueries: 1,
+            limitPerQuery: parseInt(limit) || 5,
+          })
+        }
+      )
+      results = await res.json()
+    } else {
+      // Chamada Scrape.do
+      const query = encodeURIComponent(`${seg} em ${loc}`)
+      const res = await fetch(`https://api.scrape.do/google?token=${SCRAPEDO_TOKEN}&q=${query}`)
+      const data = await res.json()
+      results = data.organic_results || []
+    }
+
+    // Padronização para o seu CRM
+    const formatted = results.map(i => ({
+      name: i.title || i.name || "Empresa sem nome",
+      address: i.address || i.snippet || i.fullAddress || "Endereço indisponível",
+      phone: i.phone || i.phoneNumber || "",
+      website: i.website || i.url || i.link || ""
+    }))
+
+    return new Response(JSON.stringify({ results: formatted }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    })
+
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400,
+    })
+  }
+})
+
 // --- BUSCA ASSÍNCRONA (FRONTEND DIRETO) ---
 async function runSearch() {
   const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
