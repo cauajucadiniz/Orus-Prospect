@@ -133,28 +133,50 @@ async function runSearch() {
 
     if (!isAdmin) {
         const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-        if (count >= 25) return showToast("🚫 Limite diário de 25 atingido!");
+        if (count >= 25) return showToast("🚫 Limite diário atingido!");
     }
 
     const btn = document.getElementById('btnSearch');
-    btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
+    const resultsDiv = document.getElementById('scraperResults');
     
-    const payload = { apiChoice: document.getElementById('apiChoice').value, loc: document.getElementById('srcLoc').value, seg: document.getElementById('srcSeg').value, limit: document.getElementById('srcLimit').value };
+    btn.disabled = true; 
+    btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
+    resultsDiv.innerHTML = '<p style="text-align:center; color:var(--gold); padding:20px;">O Robô Orus está minerando o Google Maps... aguarde.</p>';
+
+    const payload = { 
+        apiChoice: document.getElementById('apiChoice').value, 
+        loc: document.getElementById('srcLoc').value, 
+        seg: document.getElementById('srcSeg').value, 
+        limit: document.getElementById('srcLimit').value 
+    };
 
     try {
+        // ATENÇÃO: O NOME AQUI DEVE SER 'swift-task'
         const { data, error } = await sb.functions.invoke('swift-task', { body: payload });
-        if (error) throw error;
-        lastResults = data.results;
-        renderResults(data.results);
         
-        if (!isAdmin) {
-            for (let i=0; i < lastResults.length; i++) {
-                await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+        if (error) throw error;
+
+        if (data.results && data.results.length > 0) {
+            lastResults = data.results;
+            renderResults(data.results);
+            
+            if (!isAdmin) {
+                for (let i=0; i < lastResults.length; i++) {
+                    await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+                }
             }
+            showToast(`${lastResults.length} leads carregados!`);
+        } else {
+            resultsDiv.innerHTML = '<p style="text-align:center; color:#888;">Nenhum resultado encontrado.</p>';
         }
-        showToast(`${lastResults.length} leads carregados!`);
-    } catch (e) { showToast("Erro na busca."); }
-    btn.disabled = false; btn.innerHTML = "BUSCAR PROSPECTOS";
+    } catch (e) { 
+        console.error("Erro na busca:", e);
+        showToast("Erro na busca. Verifique os logs no Supabase.");
+        resultsDiv.innerHTML = '<p style="text-align:center; color:var(--red);">Falha na conexão com o robô.</p>';
+    } finally {
+        btn.disabled = false; 
+        btn.innerHTML = "BUSCAR PROSPECTOS";
+    }
 }
 
 function renderResults(results) {
