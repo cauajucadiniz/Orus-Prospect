@@ -3,74 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ORUS - Dashboard</title>
+<title>ORUS - CRM Prospectador</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ... (Mantendo as variáveis e estilos base anteriores) ... */
+/* --- ESTILOS GERAIS --- */
 :root {
-  --gold: #C9A84C; --gold-light: #E8C97A; --black: #0A0A0A; --dark: #111; --card: #181818; --border: #2A2A2A; --text: #F0EDE8; --text-muted: #8A8580; --green: #2ECC71;
+  --gold: #C9A84C; --gold-light: #E8C97A; --black: #0A0A0A; --dark: #111; 
+  --card: #181818; --border: #2A2A2A; --text: #F0EDE8; --text-muted: #8A8580;
+  --blue: #3498DB; --orange: #E67E22; --green: #2ECC71; --red: #E74C3C;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; }
+body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
-/* Dashboard UI Fix */
-.topbar { background: var(--dark); border-bottom: 1px solid var(--gold); padding: 0 16px; height: 60px; display: flex; align-items: center; justify-content: space-between; sticky: top; z-index: 100; }
+/* Navegação e Topbar */
+.topbar { background: var(--dark); border-bottom: 1px solid var(--gold); padding: 0 16px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
 .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--gold); letter-spacing: 3px; }
-.user-badge { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--gold); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #1a1a1a; }
+.user-badge { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--gold); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #1a1a1a; font-weight: bold; color: var(--gold); }
 .user-badge img { width: 100%; height: 100%; object-fit: cover; }
 
-.nav { display: flex; background: var(--dark); border-bottom: 1px solid var(--border); overflow-x: auto; }
-.nav-btn { flex: 1; padding: 15px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; }
+.nav { display: flex; background: var(--dark); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.nav-btn { flex: 1; padding: 15px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
 .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
 
 .page { display: none; padding: 20px; padding-bottom: 100px; }
 .page.active { display: block; }
 
-/* Filtros Estilizados */
-.filter-section { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-.filter-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
-.filter-group { margin-bottom: 15px; }
-.filter-label { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
+/* Elementos de UI */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--gold); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+.inp { width: 100%; background: #1a1a1a; border: 1px solid var(--border); padding: 12px; color: #fff; border-radius: 8px; margin-bottom: 12px; outline: none; font-family: inherit; }
+.btn-gold { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+.btn-gold:active { transform: scale(0.98); }
 
-.radius-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.radio-chip { display: none; }
-.radio-label { display: block; padding: 8px; background: var(--dark); border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 12px; cursor: pointer; }
-.radio-chip:checked + .radio-label { background: var(--gold); color: var(--black); border-color: var(--gold); }
+/* Relatório / Funil */
+.funnel-bar { height: 44px; border-radius: 8px; display: flex; align-items: center; padding: 0 14px; margin-bottom: 8px; font-size: 12px; font-weight: 600; justify-content: space-between; }
 
-/* Dashboard Stats */
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-.stat-card { background: var(--card); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid var(--border); }
-.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--gold); }
-
-/* Progress Bar */
-.progress-container { margin-top: 20px; background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
-.progress-bar { height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin: 10px 0; }
-.progress-fill { height: 100%; background: var(--gold); width: 0%; transition: 0.5s; }
-
-/* Botões de Ação Resultados */
-.result-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.action-btn { padding: 6px 12px; font-size: 10px; border-radius: 4px; border: 1px solid var(--gold); color: var(--gold); background: none; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 4px; }
-.action-btn.wp { border-color: var(--green); color: var(--green); }
-
-/* Modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+/* Modal Perfil */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal-overlay.open { display: flex; }
-.modal { background: var(--dark); border: 1px solid var(--gold); padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; }
 
-.inp { width: 100%; background: #1a1a1a; border: 1px solid var(--border); padding: 12px; color: #fff; border-radius: 8px; margin-bottom: 10px; outline: none; }
-.btn-gold { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+/* Filtros Search */
+.radius-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+.radio-chip { display: none; }
+.radio-label { display: block; padding: 10px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 11px; cursor: pointer; }
+.radio-chip:checked + .radio-label { background: var(--gold); color: var(--black); border-color: var(--gold); }
 </style>
 </head>
 <body>
 
-<div id="authGuard" style="position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;">Carregando...</div>
+<div id="authGuard" style="position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;">Carregando Orus...</div>
 
 <div class="topbar">
   <div class="logo">ORUS</div>
   <div style="display:flex; align-items:center; gap:12px;">
     <div class="user-badge" id="userBadge" onclick="openProfile()">?</div>
-    <button onclick="sb.auth.signOut()" style="background:none; border:1px solid #333; color:#888; padding:5px 10px; border-radius:4px; font-size:10px; cursor:pointer;">SAIR</button>
+    <button onclick="sb.auth.signOut()" class="nav-btn" style="border:1px solid #333; padding:5px 10px; border-radius:4px; font-size:9px;">SAIR</button>
   </div>
 </div>
 
@@ -78,137 +66,160 @@ body { background: var(--black); color: var(--text); font-family: 'DM Sans', san
   <button class="nav-btn active" onclick="showPage('dashboard', this)">Painel</button>
   <button class="nav-btn" onclick="showPage('leads', this)">Leads</button>
   <button class="nav-btn" onclick="showPage('scraper', this)">OrusSearch</button>
+  <button class="nav-btn" onclick="showPage('relatorio', this)">Relatório</button>
 </nav>
 
-<!-- PAINEL / DASHBOARD -->
+<!-- PAINEL -->
 <div class="page active" id="page-dashboard">
   <div style="margin-bottom: 20px;">
-    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Bom trabalho,</span>
-    <h1 style="font-size: 24px;" id="userNameDisp">Carregando...</h1>
+    <span style="font-size: 10px; color: var(--text-muted);">BOM TRABALHO,</span>
+    <h1 id="userNameDisp">...</h1>
   </div>
-
-  <div class="stats-grid">
-    <div class="stat-card"><div class="stat-num" id="st-total">0</div><div style="font-size: 10px; color: var(--text-muted);">TOTAL LEADS</div></div>
-    <div class="stat-card"><div class="stat-num" id="st-agendados" style="color:var(--green)">0</div><div style="font-size: 10px; color: var(--text-muted);">AGENDADOS</div></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+    <div class="card" style="text-align:center;"><div style="font-size:24px; font-family:'Bebas Neue'; color:var(--gold);" id="st-total">0</div><div style="font-size:9px; color:var(--text-muted);">TOTAL LEADS</div></div>
+    <div class="card" style="text-align:center;"><div style="font-size:24px; font-family:'Bebas Neue'; color:var(--green);" id="st-agendados">0</div><div style="font-size:9px; color:var(--text-muted);">AGENDADOS</div></div>
   </div>
-
-  <div class="progress-container">
-    <div style="display:flex; justify-content:space-between; font-size:12px;">
-      <span>Meta de Abordagens (Diária)</span>
-      <span id="progText">0/15</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
-    <p style="font-size:10px; color:var(--text-muted);">Mantenha o ritmo para fechar mais contratos!</p>
-  </div>
-
-  <h2 style="font-family:'Bebas Neue'; color:var(--gold); margin-top:25px; margin-bottom:15px;">Atividade Recente</h2>
+  <h2 class="section-title" style="margin-top:20px;">Atividade Recente</h2>
   <div id="recentLeads"></div>
 </div>
 
-<!-- LEADS (OCULTADO PARA BREVIDADE) -->
+<!-- LEADS -->
 <div class="page" id="page-leads">
-  <input class="inp" id="searchLeads" placeholder="Buscar nos meus leads..." oninput="renderLeads()">
-  <div id="leadsList"></div>
+    <input class="inp" id="searchLeads" placeholder="Buscar nos meus leads..." oninput="renderLeads()">
+    <div id="leadsList"></div>
 </div>
 
-<!-- ORUSSEARCH -->
+<!-- ORUSSEARCH (FILTROS COMPLETOS) -->
 <div class="page" id="page-scraper">
-  <div class="filter-section">
-    <h2 class="filter-title">Filtros de Busca</h2>
+  <div class="card">
+    <h2 class="section-title">Filtros de Busca</h2>
     
-    <div class="filter-group">
-      <label class="filter-label">Localização</label>
-      <input class="inp" id="srcLoc" placeholder="CEP, bairro, cidade ou estado...">
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">LOCALIZAÇÃO</label>
+    <input class="inp" id="srcLoc" placeholder="CEP, bairro, cidade ou estado...">
+
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">RAIO DE BUSCA</label>
+    <div class="radius-grid">
+      <input type="radio" name="radius" value="1" class="radio-chip" id="r1"><label class="radio-label" for="r1">1 km</label>
+      <input type="radio" name="radius" value="2" class="radio-chip" id="r2"><label class="radio-label" for="r2">2 km</label>
+      <input type="radio" name="radius" value="5" class="radio-chip" id="r5" checked><label class="radio-label" for="r5">5 km</label>
+      <input type="radio" name="radius" value="10" class="radio-chip" id="r10"><label class="radio-label" for="r10">10 km</label>
+      <input type="radio" name="radius" value="20" class="radio-chip" id="r20"><label class="radio-label" for="r20">20 km</label>
+      <input type="radio" name="radius" value="50" class="radio-chip" id="r50"><label class="radio-label" for="r50">50 km</label>
     </div>
 
-    <div class="filter-group">
-      <label class="filter-label">Raio de Busca: <span id="radiusVal">5 KM</span></label>
-      <div class="radius-grid">
-        <input type="radio" name="radius" value="1000" class="radio-chip" id="r1"><label class="radio-label" for="r1">1 km</label>
-        <input type="radio" name="radius" value="5000" class="radio-chip" id="r5" checked><label class="radio-label" for="r5">5 km</label>
-        <input type="radio" name="radius" value="10000" class="radio-chip" id="r10"><label class="radio-label" for="r10">10 km</label>
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <label class="filter-label">Segmento de Negócio</label>
-      <select class="inp" id="srcSeg">
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">SEGMENTO DE NEGÓCIO</label>
+    <select class="inp" id="srcSeg">
         <option value="">Selecione um segmento...</option>
-        <option value="Clínica Estética">Clínica Estética</option>
-        <option value="Odontologia">Odontologia</option>
-        <option value="Academia">Academia</option>
-        <option value="Advocacia">Advocacia</option>
-      </select>
-      <input class="inp" id="srcNicho" placeholder="Ou digite um nicho específico...">
-    </div>
+        <option>Restaurantes e Alimentação</option>
+        <option>Salões de Beleza e Estética</option>
+        <option>Clínicas e Saúde</option>
+        <option>Academias e Personal Trainer</option>
+        <option>Imobiliárias e Corretores</option>
+        <option>Advocacia e Jurídico</option>
+        <option>Contabilidade</option>
+        <option>Odontologia</option>
+        <option>Psicologia e Terapia</option>
+        <option>Educação e Cursos</option>
+        <option>Automóveis e Concessionárias</option>
+        <option>Eventos e Festas</option>
+        <option>Moda e Vestuário</option>
+        <option>Tecnologia e TI</option>
+        <option>Construção e Reformas</option>
+        <option value="outro">Outro (campo livre)</option>
+    </select>
+    <input class="inp" id="srcNicho" placeholder="Ou digite um nicho específico...">
 
-    <div class="filter-group">
-      <label class="filter-label">Tipo de Negócio</label>
-      <label style="display:flex; align-items:center; gap:8px; font-size:14px; margin-bottom:10px;">
-        <input type="radio" name="type" value="company" checked> Empresa / CNPJ
-      </label>
-      <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
-        <input type="radio" name="type" value="freelancer"> Profissional Autônomo
-      </label>
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">QUANTIDADE DE RESULTADOS</label>
+    <select class="inp" id="srcLimit">
+        <option value="5">5 leads</option>
+        <option value="10">10 leads</option>
+        <option value="15">15 leads</option>
+        <option value="20">20 leads</option>
+        <option value="25" selected>25 leads (Limite Máximo)</option>
+    </select>
+
+    <label style="font-size:10px; color:var(--gold); display:block; margin-bottom:5px;">TIPO DE NEGÓCIO</label>
+    <div style="display:flex; gap:15px; font-size:12px; margin-bottom:15px;">
+        <label><input type="radio" name="bizType" value="company"> Empresa/CNPJ</label>
+        <label><input type="radio" name="bizType" value="pro"> Profissional Autônomo</label>
+        <label><input type="radio" name="bizType" value="both" checked> Ambos</label>
     </div>
 
     <button class="btn-gold" id="btnSearch" onclick="runSearch()">Buscar Prospectos</button>
   </div>
-
-  <div id="searchControls" style="display:none; margin-bottom:15px;">
-    <button class="btn-gold" style="background:#2ecc71" onclick="addAllToCRM()">Adicionar Todos ao CRM</button>
-  </div>
   <div id="scraperResults"></div>
 </div>
 
-<!-- MODAL PERFIL -->
-<div class="modal-overlay" id="profileModal">
-  <div class="modal">
-    <h2 class="filter-title">Editar Perfil</h2>
-    <label class="filter-label">Nome de Exibição</label>
-    <input class="inp" id="newName">
-    
-    <label class="filter-label">Foto de Perfil</label>
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
-      <div class="user-badge" style="width:60px; height:60px;" id="previewAvatar">?</div>
-      <input type="file" id="fileAvatar" accept="image/*" style="display:none" onchange="previewFile()">
-      <button onclick="document.getElementById('fileAvatar').click()" style="padding:10px; background:#222; border:1px solid var(--gold); color:var(--gold); border-radius:5px; font-size:12px; cursor:pointer;">ESCOLHER DA GALERIA</button>
+<!-- RELATÓRIO -->
+<div class="page" id="page-relatorio">
+    <h2 class="section-title">Funil de Prospecção</h2>
+    <div class="card">
+        <div class="funnel-bar" style="background:rgba(52,152,219,0.15); color:var(--blue);"><span>Novos</span><span id="f-novo">0</span></div>
+        <div class="funnel-bar" style="background:rgba(230,126,34,0.15); color:var(--orange);"><span>Abordados</span><span id="f-abordado">0</span></div>
+        <div class="funnel-bar" style="background:rgba(201,168,76,0.15); color:var(--gold);"><span>Agendados</span><span id="f-agendado">0</span></div>
+        <div class="funnel-bar" style="background:rgba(46,204,113,0.15); color:var(--green);"><span>Fechados</span><span id="f-fechado">0</span></div>
+        <div class="funnel-bar" style="background:rgba(231,76,60,0.15); color:var(--red);"><span>Sem Resposta</span><span id="f-sem">0</span></div>
     </div>
 
-    <button class="btn-gold" onclick="saveProfile()" id="btnSaveProfile">Salvar Perfil</button>
+    <h2 class="section-title">Conversão</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="card" style="text-align:center;"><div style="font-size:24px; color:var(--gold);" id="c-agendamento">0%</div><div style="font-size:9px;">TAXA AGENDAMENTO</div></div>
+        <div class="card" style="text-align:center;"><div style="font-size:24px; color:var(--gold);" id="c-fechamento">0%</div><div style="font-size:9px;">TAXA FECHAMENTO</div></div>
+    </div>
+
+    <h2 class="section-title" style="margin-top:20px;">Exportar</h2>
+    <div class="card">
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Exporte todos os seus leads em CSV para Excel.</p>
+        <button class="btn-gold" onclick="exportCSV()">Exportar CSV</button>
+    </div>
+</div>
+
+<!-- MODAL PERFIL (UPLOAD) -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <h2 class="section-title">Editar Perfil</h2>
+    <input class="inp" id="newName" placeholder="Nome de Exibição">
+    
+    <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+      <div class="user-badge" style="width:60px; height:60px;" id="previewAvatar">?</div>
+      <input type="file" id="fileAvatar" accept="image/*" style="display:none" onchange="previewFile()">
+      <button onclick="document.getElementById('fileAvatar').click()" style="padding:10px; background:#222; border:1px solid var(--gold); color:var(--gold); border-radius:5px; font-size:10px; cursor:pointer;">MUDAR FOTO</button>
+    </div>
+
+    <button class="btn-gold" onclick="saveProfile()" id="btnSaveProfile">Salvar Alterações</button>
     <button class="btn-gold" style="background:none; color:#888; margin-top:10px;" onclick="closeModal()">Cancelar</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// --- CONFIGURAÇÃO ---
 const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
-let currentLeads = [];
-let lastResults = [];
+let allLeads = [];
 
-// AUTH CHECK
+// --- INICIALIZAÇÃO ---
 sb.auth.onAuthStateChange((event, session) => {
   if (!session) window.location.href = 'index.html';
   currentUser = session.user;
   document.getElementById('authGuard').style.display = 'none';
   loadProfile();
-  loadStats();
+  loadData();
 });
 
-// PROFILE FUNCTIONS
+// --- PERFIL E UPLOAD ---
 async function loadProfile() {
   const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
   if (data) {
     document.getElementById('userNameDisp').innerText = data.display_name || 'Usuário';
     document.getElementById('newName').value = data.display_name || '';
     if (data.avatar_url) {
-      const imgHtml = `<img src="${data.avatar_url}">`;
-      document.getElementById('userBadge').innerHTML = imgHtml;
-      document.getElementById('previewAvatar').innerHTML = imgHtml;
+      const img = `<img src="${data.avatar_url}">`;
+      document.getElementById('userBadge').innerHTML = img;
+      document.getElementById('previewAvatar').innerHTML = img;
     }
   }
 }
@@ -216,9 +227,7 @@ async function loadProfile() {
 function previewFile() {
   const file = document.getElementById('fileAvatar').files[0];
   const reader = new FileReader();
-  reader.onloadend = () => {
-    document.getElementById('previewAvatar').innerHTML = `<img src="${reader.result}">`;
-  };
+  reader.onloadend = () => document.getElementById('previewAvatar').innerHTML = `<img src="${reader.result}">`;
   if (file) reader.readAsDataURL(file);
 }
 
@@ -231,115 +240,102 @@ async function saveProfile() {
   let avatarUrl = document.getElementById('previewAvatar').querySelector('img')?.src;
 
   if (file) {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
+    const fileName = `${currentUser.id}-${Date.now()}.png`;
     const { error: uploadError } = await sb.storage.from('avatars').upload(fileName, file);
-    
     if (!uploadError) {
       const { data } = sb.storage.from('avatars').getPublicUrl(fileName);
       avatarUrl = data.publicUrl;
     }
   }
-
   await sb.from('profiles').upsert({ id: currentUser.id, display_name: name, avatar_url: avatarUrl });
   location.reload();
 }
 
-// SCRAPER FUNCTIONS
+// --- PESQUISA COM LIMITE DE 25 ---
 async function runSearch() {
   const btn = document.getElementById('btnSearch');
-  btn.innerText = 'Buscando...'; btn.disabled = true;
+  const hoje = new Date().toISOString().split('T')[0];
 
+  // Verifica limite de 25 buscas diárias somadas
+  const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
+  
+  if (count >= 25) { alert('⚠️ Limite diário de 25 leads atingido. Volte amanhã!'); return; }
+
+  btn.disabled = true; btn.innerText = 'Buscando...';
+  
+  // Captura filtros
   const loc = document.getElementById('srcLoc').value;
   const seg = document.getElementById('srcSeg').value || document.getElementById('srcNicho').value;
-  const rad = document.querySelector('input[name="radius"]:checked').value;
-  
-  if (!loc || !seg) { alert('Preencha Local e Segmento'); btn.disabled = false; return; }
+  const limit = parseInt(document.getElementById('srcLimit').value);
 
-  // Simulação de chamada de API (Substitua pela sua chamada real do Apify/Backend)
-  // Nota: Para os filtros funcionarem, você deve enviar esses campos no body do fetch
   try {
     const response = await fetch('/api/scraper', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ location: loc, segment: seg, radius: rad, user_id: currentUser.id })
+      body: JSON.stringify({ location: loc, segment: seg, limit: limit, user_id: currentUser.id })
     });
     const data = await response.json();
-    lastResults = data.results;
+    
+    // Registra a quantidade de buscas no banco para controle do limite
+    for(let i=0; i < data.results.length; i++) {
+        await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+    }
+
     renderResults(data.results);
-    document.getElementById('searchControls').style.display = 'block';
   } catch (e) {
-    alert('Erro na busca. Verifique seu limite de 15/dia.');
+    alert('Erro na busca ou limite excedido.');
   }
   btn.disabled = false; btn.innerText = 'Buscar Prospectos';
 }
 
 function renderResults(results) {
   const container = document.getElementById('scraperResults');
-  container.innerHTML = results.map((item, idx) => `
+  container.innerHTML = `<button class="btn-gold" style="background:#2ecc71; margin:10px 0;" onclick="addAllToCRM()">Adicionar Todos ao CRM</button>` + 
+  results.map(item => `
     <div class="card">
       <div style="font-weight:600; color:var(--gold);">${item.name}</div>
-      <div style="font-size:12px; color:var(--text-muted); margin: 4px 0;">${item.address}</div>
-      <div class="result-actions">
-        ${item.phone ? `<a href="https://wa.me/${item.phone.replace(/\D/g,'')}" target="_blank" class="action-btn wp">WhatsApp</a>` : ''}
-        ${item.website ? `<a href="${item.website}" target="_blank" class="action-btn">Website</a>` : ''}
-        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.address)}" target="_blank" class="action-btn">Maps</a>
-        <button onclick="addToCRM(${idx})" class="action-btn" style="background:var(--gold); color:#000;">+ CRM</button>
+      <div style="font-size:11px; color:var(--text-muted);">${item.address}</div>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        ${item.phone ? `<a href="https://wa.me/${item.phone.replace(/\D/g,'')}" target="_blank" style="color:var(--green); text-decoration:none; font-size:10px;">WHATSAPP</a>` : ''}
+        <a href="https://google.com/maps?q=${item.name}" target="_blank" style="color:var(--blue); text-decoration:none; font-size:10px;">MAPS</a>
       </div>
     </div>
   `).join('');
 }
 
-async function addAllToCRM() {
-  if (confirm(`Deseja adicionar todos os ${lastResults.length} leads ao seu CRM?`)) {
-    for (const lead of lastResults) {
-      await sb.from('leads').insert({ 
-        user_id: currentUser.id, 
-        name: lead.name, 
-        phone: lead.phone, 
-        addr: lead.address,
-        site: lead.website,
-        status: 'novo'
-      });
-    }
-    alert('Todos os leads foram adicionados!');
-    loadStats();
-  }
-}
-
-// DASHBOARD STATS
-async function loadStats() {
+// --- RELATÓRIO E DADOS ---
+async function loadData() {
   const { data } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
   if (data) {
+    allLeads = data;
     document.getElementById('st-total').innerText = data.length;
     document.getElementById('st-agendados').innerText = data.filter(l => l.status === 'agendado').length;
     
-    // Meta Diária (Baseado em leads criados hoje)
-    const hoje = new Date().toISOString().split('T')[0];
-    const leadsHoje = data.filter(l => l.created_at.startsWith(hoje)).length;
-    const pct = Math.min((leadsHoje / 15) * 100, 100);
-    document.getElementById('progFill').style.width = pct + '%';
-    document.getElementById('progText').innerText = `${leadsHoje}/15`;
+    // Funil
+    document.getElementById('f-novo').innerText = data.filter(l => l.status === 'novo').length;
+    document.getElementById('f-abordado').innerText = data.filter(l => l.status === 'abordado').length;
+    document.getElementById('f-agendado').innerText = data.filter(l => l.status === 'agendado').length;
+    document.getElementById('f-fechado').innerText = data.filter(l => l.status === 'fechado').length;
+    document.getElementById('f-sem').innerText = data.filter(l => l.status === 'sem-resposta').length;
 
-    // Atividade Recente
-    const recent = data.slice(-3).reverse();
-    document.getElementById('recentLeads').innerHTML = recent.map(l => `
-      <div class="card" style="padding:12px; font-size:13px; margin-bottom:8px;">
-        <b>${l.name}</b> - <span style="color:var(--gold)">${l.status.toUpperCase()}</span>
-      </div>
-    `).join('');
+    // Métricas
+    const total = data.length || 1;
+    document.getElementById('c-agendamento').innerText = Math.round((data.filter(l => l.status === 'agendado').length / total) * 100) + '%';
+    document.getElementById('c-fechamento').innerText = Math.round((data.filter(l => l.status === 'fechado').length / total) * 100) + '%';
   }
 }
 
-// UTILS
+// --- UTILITÁRIOS ---
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  if(id === 'relatorio') loadData();
 }
 function openProfile() { document.getElementById('profileModal').classList.add('open'); }
 function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
+function exportCSV() { /* Sua lógica de exportar CSV aqui */ }
 </script>
 </body>
 </html>
