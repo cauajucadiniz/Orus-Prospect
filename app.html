@@ -581,14 +581,81 @@ async function loadData() {
 }
 
 // --- UTILITÁRIOS ---
+// --- NAVEGAÇÃO ENTRE PÁGINAS ---
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if(id === 'relatorio') loadData();
+  
+  // CORREÇÃO AQUI: Carrega os dados dependendo da aba
+  if (id === 'relatorio' || id === 'dashboard') loadData();
+  if (id === 'leads') renderLeads(); 
 }
-  function showToast(message) {
+
+// --- GESTÃO DE LEADS NO CRM ---
+async function renderLeads() {
+  const container = document.getElementById('leadsList');
+  container.innerHTML = '<p style="text-align:center; padding:20px;">Carregando seus leads...</p>';
+
+  const { data: leads, error } = await sb.from('leads')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (error || !leads || leads.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:#888; padding:20px;">Nenhum lead no CRM ainda.</p>';
+    return;
+  }
+
+  container.innerHTML = leads.map(lead => `
+    <div class="card" style="border-left: 4px solid ${getStatusColor(lead.status)}">
+      <div style="font-weight:600; color:var(--gold);">${lead.name}</div>
+      <div style="font-size:11px; color:#888; margin-bottom:10px;">${lead.addr || 'Endereço não informado'}</div>
+      
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <!-- Seletor de Status -->
+        <select onchange="updateLeadStatus('${lead.id}', this.value)" style="background:#1a1a1a; color:#fff; border:1px solid var(--border); font-size:10px; padding:5px; border-radius:4px; outline:none;">
+          <option value="novo" ${lead.status === 'novo' ? 'selected' : ''}>Novo</option>
+          <option value="abordado" ${lead.status === 'abordado' ? 'selected' : ''}>Abordado</option>
+          <option value="agendado" ${lead.status === 'agendado' ? 'selected' : ''}>Agendado</option>
+          <option value="fechado" ${lead.status === 'fechado' ? 'selected' : ''}>Fechado</option>
+          <option value="sem-resposta" ${lead.status === 'sem-resposta' ? 'selected' : ''}>Sem Resposta</option>
+        </select>
+
+        ${lead.phone ? `<a href="https://wa.me/${lead.phone.replace(/\D/g,'')}" target="_blank" style="color:var(--green); text-decoration:none; font-size:10px; font-weight:bold;">WHATSAPP</a>` : ''}
+        
+        <button onclick="deleteLead('${lead.id}')" style="background:none; border:none; color:var(--red); font-size:10px; cursor:pointer; margin-left:auto;">EXCLUIR</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateLeadStatus(id, newStatus) {
+  const { error } = await sb.from('leads').update({ status: newStatus }).eq('id', id);
+  if (!error) {
+    showToast("Status atualizado!");
+    loadData(); // Atualiza dashboard e relatório
+  }
+}
+
+async function deleteLead(id) {
+  if (!confirm("Tem certeza que deseja excluir este lead?")) return;
+  const { error } = await sb.from('leads').delete().eq('id', id);
+  if (!error) {
+    showToast("Lead removido.");
+    renderLeads();
+    loadData();
+  }
+}
+
+function getStatusColor(status) {
+  const colors = { novo: '#3498db', abordado: '#e67e22', agendado: '#f1c40f', fechado: '#2ecc71', 'sem-resposta': '#e74c3c' };
+  return colors[status] || '#888';
+}
+
+// --- UTILITÁRIOS ---
+function showToast(message) {
   const toast = document.getElementById('toast');
   if (toast) {
     toast.innerText = message;
@@ -598,9 +665,27 @@ function showPage(id, btn) {
     alert(message);
   }
 }
+
 function openProfile() { document.getElementById('profileModal').classList.add('open'); }
 function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
-function exportCSV() { /* Sua lógica de exportar CSV aqui */ }
+
+async function exportCSV() {
+  const { data: leads } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
+  if (!leads || leads.length === 0) return alert("Não há dados para exportar.");
+
+  let csv = "Nome,Telefone,Endereço,Status,Data\n";
+  leads.forEach(l => {
+    csv += `"${l.name}","${l.phone || ''}","${l.addr || ''}","${l.status}","${l.created_at}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.setAttribute('href', url);
+  a.setAttribute('download', 'meus_leads_orus.csv');
+  a.click();
+}
+
 const ADMIN_EMAILS = ['cauandiniz12@gmail.com', 'suelemdeoliveirapaiva7@gmail.com'];
 </script>
 </body>
