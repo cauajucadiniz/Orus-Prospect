@@ -48,6 +48,27 @@ body { background: var(--black); color: var(--text); font-family: 'DM Sans', san
 .radio-chip { display: none; }
 .radio-label { display: block; padding: 10px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px; text-align: center; font-size: 11px; cursor: pointer; }
 .radio-chip:checked + .radio-label { background: var(--gold); color: var(--black); border-color: var(--gold); }
+  /* Animação de Carregamento (Spinner) */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000; /* Cor do topo do giro */
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Estilo para botão desativado */
+.btn-gold:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
 </style>
 </head>
 <body>
@@ -289,36 +310,46 @@ async function saveProfile() {
 }
 
 // --- PESQUISA COM LIMITE DE 25 ---
+// Variável global para armazenar os resultados e permitir "Adicionar Todos"
+let lastResults = []; 
+
 async function runSearch() {
   const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   const hoje = new Date().toISOString().split('T')[0];
 
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 25) { alert('Cota diária esgotada!'); return; }
+    if (count >= 25) { showToast('⚠️ Cota diária de 25 leads atingida!'); return; }
   }
 
   const btn = document.getElementById('btnSearch');
-  btn.disabled = true; btn.innerText = 'PROCESSANDO...';
+  
+  // 1. DESATIVA O BOTÃO E MOSTRA O CARREGAMENTO
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
 
-  // CAMPOS DO FORMULÁRIO
-  const apiChoice = document.getElementById('apiChoice').value;
-  const loc = document.getElementById('srcLoc').value; // Verifique se o ID é esse mesmo
-  const seg = document.getElementById('srcSeg').value || document.getElementById('srcNicho').value;
-  const limit = document.getElementById('srcLimit').value;
+  // TRAVA O BOTÃO E MOSTRA SPINNER
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner"></div> BUSCANDO LEADS...`;
 
-  if(!loc || !seg) { alert("Preencha Local e Segmento!"); btn.disabled = false; btn.innerText = 'BUSCAR PROSPECTOS'; return; }
+  const payload = {
+    apiChoice: document.getElementById('apiChoice').value,
+    loc: document.getElementById('srcLoc').value,
+    seg: document.getElementById('srcSeg').value || document.getElementById('srcNicho').value,
+    limit: document.getElementById('srcLimit').value
+  };
 
   try {
     const response = await fetch('/api/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiChoice, loc, seg, limit })
+      body: JSON.stringify(payload)
     });
 
     const data = await response.json();
 
     if (response.ok) {
+      lastResults = data.results; // Salva na variável global
       if (!isAdmin) {
          for(let i=0; i < data.results.length; i++) {
            await sb.from('logs_buscas').insert({ user_id: currentUser.id });
@@ -327,29 +358,128 @@ async function runSearch() {
       renderResults(data.results);
       showToast("Busca concluída!");
     } else {
-      alert("Erro do Servidor: " + (data.error || "Desconhecido"));
+      alert("Erro: " + data.error);
     }
-
   } catch (e) {
-    console.error("Erro completo:", e);
-    alert('Erro de conexão: Verifique se a Vercel terminou o deploy.');
+    alert('Erro de conexão com o servidor.');
+  } finally {
+    // 2. REATIVA O BOTÃO APÓS TERMINAR
+    btn.disabled = false;
+    btn.innerHTML = 'BUSCAR LEADS';
   }
-  btn.disabled = false; btn.innerText = 'BUSCAR PROSPECTOS';
 }
-
 function renderResults(results) {
   const container = document.getElementById('scraperResults');
-  container.innerHTML = `<button class="btn-gold" style="background:#2ecc71; margin:10px 0;" onclick="addAllToCRM()">Adicionar Todos ao CRM</button>` + 
-  results.map(item => `
-    <div class="card">
+  
+  // Adiciona o botão de "Adicionar Todos" no topo
+  let html = `<button id="btnAllToCRM" class="btn-gold" style="background:#2ecc71; margin:10px 0;" onclick="addAllToCRM()">Adicionar Todos ao CRM</button>`;
+
+  // Gera os cards dos leads (Note o (item, idx) abaixo, isso é essencial)
+  html += results.map((item, idx) => `
+    <div class="card" id="card-lead-${idx}">
       <div style="font-weight:600; color:var(--gold);">${item.name}</div>
-      <div style="font-size:11px; color:var(--text-muted);">${item.address}</div>
-      <div style="margin-top:10px; display:flex; gap:8px;">
-        ${item.phone ? `<a href="https://wa.me/${item.phone.replace(/\D/g,'')}" target="_blank" style="color:var(--green); text-decoration:none; font-size:10px;">WHATSAPP</a>` : ''}
-        <a href="https://google.com/maps?q=${item.name}" target="_blank" style="color:var(--blue); text-decoration:none; font-size:10px;">MAPS</a>
+      <div style="font-size:11px; color:var(--text-muted);">${item.address || 'Endereço não informado'}</div>
+      
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap: wrap;">
+        <!-- Botão WhatsApp (se houver número) -->
+        ${item.phone ? `<a href="https://wa.me/${item.phone.replace(/\D/g,'')}" target="_blank" style="color:var(--green); text-decoration:none; font-size:10px; border: 1px solid var(--green); padding: 4px 8px; border-radius: 4px;">WHATSAPP</a>` : ''}
+        
+        <!-- Botão Maps -->
+        <a href="https://google.com/maps?q=${encodeURIComponent(item.name + ' ' + item.address)}" target="_blank" style="color:var(--blue); text-decoration:none; font-size:10px; border: 1px solid var(--blue); padding: 4px 8px; border-radius: 4px;">MAPS</a>
+        
+        <!-- BOTAO INDIVIDUAL DE ADIÇÃO (O que você pediu) -->
+        <button id="btn-add-${idx}" onclick="addToSingleCRM(${idx})" style="background:var(--gold); color:#000; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px;">
+            + CRM
+        </button>
       </div>
     </div>
   `).join('');
+
+  container.innerHTML = html;
+}
+
+  async function addToSingleCRM(idx) {
+  const lead = lastResults[idx]; // Pega o lead específico da lista
+  const btn = document.getElementById(`btn-add-${idx}`);
+  const card = document.getElementById(`card-lead-${idx}`);
+  
+  // Feedback visual de carregamento
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="width:10px; height:10px; border-top-color:#000;"></div>`;
+
+  try {
+    const { error } = await sb.from('leads').insert({
+      user_id: currentUser.id,
+      name: lead.name,
+      phone: lead.phone,
+      addr: lead.address,
+      site: lead.website,
+      status: 'novo'
+    });
+
+    if (error) throw error;
+
+    // Se deu certo: muda o botão para um Check verde
+    showToast("Lead salvo no CRM!");
+    btn.style.background = "#2ecc71";
+    btn.innerHTML = "✓ SALVO";
+    card.style.borderColor = "var(--green)"; // Destaca o card que foi salvo
+    
+    // Atualiza os números do Painel/Relatório
+    if(typeof loadData === 'function') loadData();
+
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao salvar lead.");
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
+
+  async function addAllToCRM() {
+  if (!lastResults || lastResults.length === 0) {
+    showToast("Nenhum lead para adicionar.");
+    return;
+  }
+
+  if (!confirm(`Deseja adicionar os ${lastResults.length} leads ao seu CRM agora?`)) return;
+
+  const btnAll = document.querySelector('button[onclick="addAllToCRM()"]');
+  const originalText = btnAll.innerHTML;
+
+  // Trava o botão e mostra carregamento
+  btnAll.disabled = true;
+  btnAll.innerHTML = '<div class="spinner"></div> PROCESSANDO ADIÇÃO...';
+
+  try {
+    // Prepara os dados para inserção em massa
+    const leadsParaInserir = lastResults.map(item => ({
+      user_id: currentUser.id,
+      name: item.name,
+      phone: item.phone,
+      addr: item.address,
+      site: item.website,
+      status: 'novo'
+    }));
+
+    // Insere tudo de uma vez no Supabase (Upsert evita duplicados se tiver campo único)
+    const { error } = await sb.from('leads').insert(leadsParaInserir);
+
+    if (error) throw error;
+
+    showToast(`✅ ${lastResults.length} leads adicionados com sucesso!`);
+    loadData(); // Atualiza os números no painel
+    
+    // Oculta o botão após adicionar para não repetir
+    btnAll.style.display = 'none';
+
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao adicionar leads: " + e.message);
+    btnAll.disabled = false;
+    btnAll.innerHTML = originalText;
+  }
 }
 
 // --- RELATÓRIO E DADOS ---
