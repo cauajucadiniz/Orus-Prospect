@@ -136,7 +136,7 @@ async function runSearch() {
     const payload = { apiChoice: document.getElementById('apiChoice').value, loc: document.getElementById('srcLoc').value, seg: document.getElementById('srcSeg').value, limit: document.getElementById('srcLimit').value };
 
     try {
-        const { data, error } = await sb.functions.invoke('search-leads', { body: payload });
+        const { data, error } = await sb.functions.invoke('swift-task', { body: payload });
         if (error) throw error;
         lastResults = data.results;
         renderResults(data.results);
