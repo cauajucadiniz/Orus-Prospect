@@ -1,202 +1,59 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ORUS - Prospectador</title>
+<meta charset="UTF-8"><title>ORUS - Acesso</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --gold:#C9A84C;--gold-light:#E8C97A;--gold-dark:#9A7A30;
-  --black:#0A0A0A;--dark:#111111;--card:#181818;--card2:#1F1F1F;
-  --border:#2A2A2A;--border-gold:rgba(201,168,76,0.3);
-  --text:#F0EDE8;--text-muted:#8A8580;
-}
-body{
-  background:var(--black);color:var(--text);
-  font-family:'DM Sans',sans-serif;
-  min-height:100vh;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;padding:24px;
-}
-.bg-pattern{
-  position:fixed;top:0;left:0;right:0;bottom:0;
-  background-image:radial-gradient(circle at 20% 20%, rgba(201,168,76,0.04) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(201,168,76,0.04) 0%, transparent 50%);
-  pointer-events:none;z-index:0;
-}
-.container{
-  width:100%;max-width:400px;position:relative;z-index:1;
-}
-.logo-area{text-align:center;margin-bottom:40px}
-.logo{
-  font-family:'Bebas Neue',sans-serif;font-size:52px;
-  letter-spacing:8px;color:var(--gold);line-height:1;
-}
-.logo-sub{
-  font-size:10px;letter-spacing:4px;text-transform:uppercase;
-  color:var(--text-muted);margin-top:4px;font-weight:300;
-}
-.logo-line{
-  width:60px;height:1px;background:var(--border-gold);
-  margin:16px auto;
-}
-.card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:16px;padding:28px 24px;
-  box-shadow:0 20px 60px rgba(0,0,0,0.5);
-}
-.card-title{
-  font-size:13px;letter-spacing:2px;text-transform:uppercase;
-  color:var(--text-muted);margin-bottom:24px;text-align:center;
-}
-.input-group{margin-bottom:16px}
-.input-label{
-  font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
-  color:var(--text-muted);margin-bottom:8px;display:block;
-}
-.inp{
-  width:100%;background:var(--card2);border:1px solid var(--border);
-  border-radius:10px;padding:14px 16px;color:var(--text);
-  font-size:15px;font-family:'DM Sans',sans-serif;outline:none;
-  transition:.2s;
-}
-.inp:focus{border-color:var(--gold-dark);background:var(--dark)}
-.inp::placeholder{color:var(--text-muted);font-size:14px}
-.btn{
-  width:100%;padding:16px;border-radius:10px;
-  font-size:12px;font-weight:700;letter-spacing:2px;
-  text-transform:uppercase;font-family:'DM Sans',sans-serif;
-  cursor:pointer;border:none;transition:.15s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.btn:active{transform:scale(0.98)}
-.btn-gold{background:var(--gold);color:var(--black)}
-.btn-gold:hover{background:var(--gold-light)}
-.btn-gold:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-.divider{
-  display:flex;align-items:center;gap:12px;margin:20px 0;
-}
-.divider-line{flex:1;height:1px;background:var(--border)}
-.divider-text{font-size:11px;color:var(--text-muted);letter-spacing:1px}
-.link-btn{
-  width:100%;padding:14px;border-radius:10px;
-  font-size:12px;font-weight:600;letter-spacing:1.5px;
-  text-transform:uppercase;font-family:'DM Sans',sans-serif;
-  cursor:pointer;background:transparent;
-  border:1px solid var(--border-gold);color:var(--gold);
-  transition:.15s;
-}
-.link-btn:hover{background:rgba(201,168,76,0.06)}
-.link-btn:active{transform:scale(0.98)}
-.msg{
-  font-size:13px;text-align:center;padding:12px 16px;
-  border-radius:8px;margin-bottom:16px;display:none;
-}
-.msg.error{background:rgba(231,76,60,0.1);color:#E74C3C;border:1px solid rgba(231,76,60,0.2)}
-.msg.success{background:rgba(46,204,113,0.1);color:#2ECC71;border:1px solid rgba(46,204,113,0.2)}
-.footer-text{
-  text-align:center;margin-top:24px;
-  font-size:11px;color:var(--text-muted);letter-spacing:0.5px;
-}
-.spinner{
-  width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);
-  border-top-color:var(--black);border-radius:50%;
-  animation:spin .6s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
+    :root { --gold: #C9A84C; --black: #0A0A0A; }
+    body { background: var(--black); color: #fff; font-family: 'DM Sans', sans-serif; display: flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .card { background: #111; padding: 40px; border-radius: 16px; border: 1px solid #222; width: 100%; max-width: 350px; text-align: center; }
+    .logo { font-family: 'Bebas Neue'; font-size: 50px; color: var(--gold); letter-spacing: 5px; margin-bottom: 20px; }
+    input { width: 100%; padding: 12px; margin-bottom: 15px; background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 8px; box-sizing: border-box; }
+    .btn { width: 100%; padding: 14px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+    .link { color: var(--gold); font-size: 12px; text-decoration: none; display: block; margin-top: 15px; cursor: pointer; }
 </style>
 </head>
 <body>
-<div class="bg-pattern"></div>
-<div class="container">
-  <div class="logo-area">
-    <div class="logo">ORUS</div>
-    <div class="logo-line"></div>
-    <div class="logo-sub">Prospectador Comercial</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title" id="formTitle">Acesso Restrito</div>
-
-    <div class="msg" id="msg"></div>
-
-    <div id="loginForm">
-      <div class="input-group">
-        <label class="input-label">Email</label>
-        <input class="inp" type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
-      </div>
-      <div class="input-group">
-        <label class="input-label">Senha</label>
-        <input class="inp" type="password" id="loginPass" placeholder="Sua senha" autocomplete="current-password">
-      </div>
-      <button class="btn btn-gold" id="loginBtn" onclick="doLogin()">
-        Entrar
-      </button>
-      <div style="margin-top: 20px; text-align: center;">
-    <span style="color: #888; font-size: 0.9em;">Ainda não tem acesso?</span>
-    <a href="/cadastro.html" style="color: #D4AF37; text-decoration: none; font-weight: bold; margin-left: 5px; display: inline-block;">Solicitar Cadastro</a>
-</div>
-      <div class="divider">
-        <div class="divider-line"></div>
-        <div class="divider-text">ou</div>
-        <div class="divider-line"></div>
-      </div>
-      <button class="link-btn" onclick="showForgot()">Esqueci minha senha</button>
+    <div class="card">
+        <div class="logo">ORUS</div>
+        <div id="loginForm">
+            <input type="email" id="email" placeholder="E-mail">
+            <input type="password" id="pass" placeholder="Senha">
+            <button class="btn" onclick="doLogin()">ENTRAR</button>
+            <a class="link" href="cadastro.html">Solicitar Cadastro</a>
+            <span class="link" onclick="showForgot()">Esqueci minha senha</span>
+        </div>
+        <div id="forgotForm" style="display:none">
+            <input type="email" id="resetEmail" placeholder="Seu e-mail">
+            <button class="btn" onclick="doForgot()">ENVIAR RECUPERAÇÃO</button>
+            <span class="link" onclick="showLogin()">Voltar ao login</span>
+        </div>
     </div>
-
-    <div id="forgotForm" style="display:none">
-      <div class="input-group">
-        <label class="input-label">Email</label>
-        <input class="inp" type="email" id="forgotEmail" placeholder="seu@email.com">
-      </div>
-      <button class="btn btn-gold" id="forgotBtn" onclick="doForgot()">
-        Enviar link de recuperação
-      </button>
-      <div class="divider">
-        <div class="divider-line"></div>
-        <div class="divider-text">ou</div>
-        <div class="divider-line"></div>
-      </div>
-      <button class="link-btn" onclick="showLogin()">Voltar ao login</button>
-    </div>
-  </div>
-
-  <div class="footer-text">
-    Acesso exclusivo para equipe Orus Company
-  </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = 'https://aeymzibnwafenvuoagum.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    const sb = supabase.createClient('https://aeymzibnwafenvuoagum.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleW16aWJud2FmZW52dW9hZ3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDM5NDksImV4cCI6MjA5Mjg3OTk0OX0.mslQEeQOj_N1X5_KhBW-kBmCv7sKLglsUFGCXPuArJw');
 
-sb.auth.onAuthStateChange((event, session) => {
-  if (event === "PASSWORD_RECOVERY") { window.location.href = "recovery.html"; }
-  else if (session) {
-    if (!window.location.hash.includes("recovery")) window.location.href = "app.html";
-  }
-});
+    sb.auth.onAuthStateChange((event, session) => {
+        if (event === "PASSWORD_RECOVERY") { window.location.href = "recovery.html"; }
+        else if (session && event === "SIGNED_IN") {
+            if (!window.location.hash.includes("recovery")) window.location.href = "app.html";
+        }
+    });
 
-async function doLogin(){
-  const e = document.getElementById('loginEmail').value;
-  const p = document.getElementById('loginPass').value;
-  const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
-  if(error) alert("Email ou senha inválidos.");
-}
+    async function doLogin() {
+        const { error } = await sb.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('pass').value });
+        if(error) alert("Acesso negado.");
+    }
 
-async function doForgot(){
-  const e = document.getElementById('forgotEmail').value;
-  await sb.auth.resetPasswordForEmail(e, { redirectTo: 'https://orus-prospect.vercel.app/recovery.html' });
-  alert("Link de recuperação enviado ao seu e-mail!");
-}
+    async function doForgot() {
+        await sb.auth.resetPasswordForEmail(document.getElementById('resetEmail').value, { redirectTo: 'https://orus-prospect.vercel.app/recovery.html' });
+        alert("E-mail enviado!");
+    }
 
-function showForgot(){ document.getElementById('loginForm').style.display='none'; document.getElementById('forgotForm').style.display='block'; }
-function showLogin(){ document.getElementById('loginForm').style.display='block'; document.getElementById('forgotForm').style.display='none'; }
+    function showForgot() { document.getElementById('loginForm').style.display='none'; document.getElementById('forgotForm').style.display='block'; }
+    function showLogin() { document.getElementById('loginForm').style.display='block'; document.getElementById('forgotForm').style.display='none'; }
 </script>
 </body>
 </html>
