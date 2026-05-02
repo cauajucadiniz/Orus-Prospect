@@ -319,10 +319,7 @@ async function runSearch() {
 
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 25) { 
-        showToast("⚠️ Limite diário de 25 leads atingido!"); 
-        return; 
-    }
+    if (count >= 25) { showToast('🚫 Limite diário atingido!'); return; }
   }
 
   const btn = document.getElementById('btnSearch');
@@ -330,7 +327,7 @@ async function runSearch() {
   
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
-  resultsDiv.innerHTML = ''; // Limpa resultados anteriores sem mensagens chatas
+  resultsDiv.innerHTML = ''; 
 
   const payload = {
     apiChoice: document.getElementById('apiChoice').value,
@@ -348,28 +345,73 @@ async function runSearch() {
 
     const data = await response.json();
 
-    if (response.ok && data.results && data.results.length > 0) {
-      lastResults = data.results;
-      
-      if (!isAdmin) {
-        // Registra cada lead encontrado no limite diário
-        for(let i=0; i < lastResults.length; i++) {
-          await sb.from('logs_buscas').insert({ user_id: currentUser.id });
-        }
-      }
+    if (!response.ok) throw new Error(data.error);
 
-      renderResults(data.results);
-      showToast(`${data.results.length} leads encontrados!`);
-    } else {
-      resultsDiv.innerHTML = `<p style="text-align:center; color:#888; padding:20px;">Nenhum lead encontrado ou a busca falhou. Tente mudar o segmento ou diminuir a quantidade de leads.</p>`;
-      showToast("Busca sem resultados.");
+    // Se for Scrape.do (resultado direto)
+    if (data.type === 'direct') {
+      processResults(data.results, isAdmin);
+    } 
+    // Se for Apify (precisa esperar)
+    else if (data.type === 'apify') {
+      showToast("Robô Orus iniciado no Google Maps...");
+      pollApifyResults(data.runId, isAdmin);
     }
+
   } catch (e) {
-    showToast("Erro: O servidor de busca está sobrecarregado.");
-  } finally {
+    showToast("Erro ao iniciar busca. Verifique os Tokens.");
     btn.disabled = false;
     btn.innerHTML = 'BUSCAR PROSPECTOS';
   }
+}
+
+// Função para ficar perguntando ao Apify se ele terminou
+async function pollApifyResults(runId, isAdmin) {
+  const btn = document.getElementById('btnSearch');
+  let finished = false;
+  let attempts = 0;
+
+  while (!finished && attempts < 20) {
+    attempts++;
+    await new Promise(r => setTimeout(r, 4000)); // Espera 4 segundos entre as tentativas
+
+    const check = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=apify_api_J5pSN8eifxP8t7bqZ5x5CdIJC64wvj19Q8Cm`);
+    const checkData = await check.json();
+
+    if (checkData.data.status === 'SUCCEEDED') {
+      finished = true;
+      const dsRes = await fetch(`https://api.apify.com/v2/datasets/${checkData.data.defaultDatasetId}/items?token=apify_api_J5pSN8eifxP8t7bqZ5x5CdIJC64wvj19Q8Cm`);
+      const items = await dsRes.json();
+      
+      const formatted = items.map(i => ({
+        name: i.title || i.name,
+        address: i.address || i.fullAddress,
+        phone: i.phone || i.phoneNumber || '',
+        website: i.website || i.url || ''
+      }));
+
+      processResults(formatted, isAdmin);
+    } else if (checkData.data.status === 'FAILED') {
+      showToast("O robô falhou na busca.");
+      finished = true;
+    }
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'BUSCAR PROSPECTOS';
+}
+
+function processResults(results, isAdmin) {
+  if (!results || results.length === 0) {
+    showToast("Nenhum lead encontrado.");
+    return;
+  }
+  lastResults = results;
+  if (!isAdmin) {
+    results.forEach(() => {
+      sb.from('logs_buscas').insert({ user_id: currentUser.id }).then();
+    });
+  }
+  renderResults(results);
+  showToast(`${results.length} leads carregados!`);
 }
   
 function renderResults(results) {
