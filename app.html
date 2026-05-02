@@ -507,9 +507,11 @@ async function renderLeads() {
 async function updateLeadStatus(id, newStatus) {
   const { error } = await sb.from('leads').update({ status: newStatus }).eq('id', id);
   if (!error) {
-    showToast(`Status atualizado para ${newStatus}`);
-    renderLeads(); // Recarrega a lista
-    loadData();    // Recarrega o dashboard
+    // Trocamos alert por showToast
+    showToast(`Status: ${getStatusLabel(newStatus)}`); 
+    loadData(); // Atualiza tudo automaticamente
+  } else {
+    showToast("Erro ao atualizar.");
   }
 }
 
@@ -530,31 +532,58 @@ async function deleteLead(id) {
 
 // --- RELATÓRIO E DADOS ---
 async function loadData() {
-  const { data, error } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
+  const { data, error } = await sb.from('leads').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   if (error) return;
 
+  const total = data.length;
   const stats = {
     novo: data.filter(l => l.status === 'novo').length,
     abordado: data.filter(l => l.status === 'abordado').length,
     agendado: data.filter(l => l.status === 'agendado').length,
-    fechado: data.filter(l => l.status === 'fechado').length
+    fechado: data.filter(l => l.status === 'fechado').length,
+    sem_resposta: data.filter(l => l.status === 'sem-resposta').length
   };
 
-  // Atualiza os campos apenas se eles existirem na tela
+  // 1. ATUALIZA NÚMEROS DO PAINEL (HOME)
   const setEl = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
-
-  setEl('st-total', data.length);
+  setEl('st-total', total);
   setEl('st-agendados', stats.agendado);
   setEl('dash-novo', stats.novo);
   setEl('dash-abordado', stats.abordado);
   setEl('dash-agendado', stats.agendado);
   setEl('dash-fechado', stats.fechado);
-  
-  // Funil da aba Relatório (IDs f-novo, etc)
+
+  // 2. ATUALIZA RELATÓRIO (FUNIL E TAXAS)
   setEl('f-novo', stats.novo);
   setEl('f-abordado', stats.abordado);
   setEl('f-agendado', stats.agendado);
   setEl('f-fechado', stats.fechado);
+  setEl('f-sem', stats.sem_resposta);
+
+  // Cálculo de Taxas
+  const totalCalculo = total || 1;
+  setEl('c-agendamento', Math.round((stats.agendado / totalCalculo) * 100) + '%');
+  setEl('c-fechamento', Math.round((stats.fechado / totalCalculo) * 100) + '%');
+
+  // 3. ATUALIZA ATIVIDADE RECENTE (HOME)
+  const recentContainer = document.getElementById('recentLeads');
+  if (recentContainer) {
+    const recent = data.slice(0, 4); // Pega os 4 últimos
+    recentContainer.innerHTML = recent.map(l => `
+      <div class="card" style="padding: 12px; border-left: 3px solid ${getStatusColor(l.status)}; margin-bottom: 8px; font-size: 13px;">
+        <div style="display:flex; justify-content:space-between;">
+          <b>${l.name}</b>
+          <span style="font-size:10px; color:var(--gold);">${getStatusLabel(l.status)}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+// Auxiliares para nomes legíveis
+function getStatusLabel(s) {
+    const labels = { novo: 'Novo', abordado: 'Abordado', agendado: 'Agendado', fechado: 'Fechado', 'sem-resposta': 'Sem Resposta' };
+    return labels[s] || 'Novo';
 }
 
   async function loadStats() {
@@ -671,19 +700,32 @@ function closeModal() { document.getElementById('profileModal').classList.remove
 
 async function exportCSV() {
   const { data: leads } = await sb.from('leads').select('*').eq('user_id', currentUser.id);
-  if (!leads || leads.length === 0) return alert("Não há dados para exportar.");
+  if (!leads || leads.length === 0) {
+      showToast("Não há leads para exportar.");
+      return;
+  }
 
-  let csv = "Nome,Telefone,Endereço,Status,Data\n";
+  // Cabeçalho com ponto e vírgula
+  let csv = "Nome;Telefone;Endereço;Status;Data de Cadastro\n";
+
   leads.forEach(l => {
-    csv += `"${l.name}","${l.phone || ''}","${l.addr || ''}","${l.status}","${l.created_at}"\n`;
+    const dataFormatada = new Date(l.created_at).toLocaleDateString('pt-BR');
+    const statusLabel = getStatusLabel(l.status);
+    // Limpa pontos e vírgulas dos nomes para não quebrar a coluna
+    const nome = l.name.replace(/;/g, ',');
+    const endereco = (l.addr || '').replace(/;/g, ',');
+    
+    csv += `${nome};${l.phone || ''};${endereco};${statusLabel};${dataFormatada}\n`;
   });
 
-  const blob = new Blob([csv], { type: 'text/csv' });
+  // O segredo do Excel: BOM (\ufeff) + Ponto e Vírgula
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.setAttribute('href', url);
-  a.setAttribute('download', 'meus_leads_orus.csv');
+  a.href = url;
+  a.download = `leads_orus_${new Date().getTime()}.csv`;
   a.click();
+  showToast("Planilha gerada com sucesso!");
 }
 
 const ADMIN_EMAILS = ['cauandiniz12@gmail.com', 'suelemdeoliveirapaiva7@gmail.com'];
