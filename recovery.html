@@ -2,22 +2,28 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><title>Nova Senha - ORUS</title>
-    <style>body{background:#000;color:#c9a84c;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .card{background:#111;padding:30px;border-radius:12px;border:1px solid #c9a84c;text-align:center;width:300px;}</style>
+    <style>
+        body { background:#000; color:#c9a84c; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+        .card { background:#111; padding:30px; border-radius:12px; border:1px solid #c9a84c; text-align:center; width:90%; max-width:350px; }
+        input { width:100%; padding:12px; margin:20px 0; background:#222; border:1px solid #444; color:#fff; border-radius:8px; box-sizing:border-box; }
+        button { width:100%; padding:12px; background:#c9a84c; color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+    </style>
 </head>
 <body>
     <div class="card">
-        <h2>Nova Senha</h2>
-        <input type="password" id="newPass" placeholder="Digite a nova senha" style="width:100%;padding:10px;margin-bottom:20px;background:#222;border:1px solid #444;color:#fff;">
-        <button onclick="updatePassword()" style="width:100%;padding:10px;background:#c9a84c;color:#000;border:none;border-radius:5px;font-weight:bold;cursor:pointer;">ATUALIZAR SENHA</button>
+        <h2 style="font-family:'Bebas Neue',sans-serif; letter-spacing:2px;">DEFINIR NOVA SENHA</h2>
+        <input type="password" id="newPass" placeholder="Mínimo 6 caracteres">
+        <button onclick="updatePassword()">SALVAR NOVA SENHA</button>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const sb = supabase.createClient('SUA_URL', 'SUA_KEY');
+        const sb = supabase.createClient('https://aeymzibnwafenvuoagum.supabase.co', 'SUA_ANON_KEY');
         async function updatePassword() {
             const pass = document.getElementById('newPass').value;
+            if(pass.length < 6) return alert("Senha muito curta!");
             const { error } = await sb.auth.updateUser({ password: pass });
             if (error) alert("Erro: " + error.message);
-            else { alert("Senha alterada! Faça login."); window.location.href = "index.html"; }
+            else { alert("Senha alterada com sucesso!"); window.location.href = "index.html"; }
         }
     </script>
 </body>
