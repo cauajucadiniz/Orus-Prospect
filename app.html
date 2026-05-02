@@ -293,66 +293,48 @@ async function runSearch() {
   const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   const hoje = new Date().toISOString().split('T')[0];
 
-  // Bypass para Admins (Cauã e Suelem)
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 25) { 
-      showToast('⚠️ Limite diário de 25 leads atingido!'); 
-      return; 
-    }
+    if (count >= 25) { alert('Cota diária esgotada!'); return; }
   }
 
   const btn = document.getElementById('btnSearch');
-  btn.disabled = true; btn.innerText = 'Buscando...';
+  btn.disabled = true; btn.innerText = 'PROCESSANDO...';
 
-  // Coleta todos os filtros
-  const payload = {
-    apiChoice: document.getElementById('apiChoice').value,
-    loc: document.getElementById('srcLoc').value, // Campo de localização
-    seg: document.getElementById('srcSeg').value || document.getElementById('srcNicho').value,
-    limit: parseInt(document.getElementById('srcLimit').value),
-    user_id: currentUser.id
-  };
+  // CAMPOS DO FORMULÁRIO
+  const apiChoice = document.getElementById('apiChoice').value;
+  const loc = document.getElementById('srcLoc').value; // Verifique se o ID é esse mesmo
+  const seg = document.getElementById('srcSeg').value || document.getElementById('srcNicho').value;
+  const limit = document.getElementById('srcLimit').value;
 
-  if (!payload.loc || !payload.seg) {
-    alert("Por favor, preencha a Localização e o Segmento.");
-    btn.disabled = false; btn.innerText = 'Buscar Prospectos';
-    return;
-  }
+  if(!loc || !seg) { alert("Preencha Local e Segmento!"); btn.disabled = false; btn.innerText = 'BUSCAR PROSPECTOS'; return; }
 
   try {
-    // Chamada para o seu "Túnel Seguro" na Vercel
     const response = await fetch('/api/search', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    apiChoice: document.getElementById('apiChoice').value,
-    loc: document.getElementById('srcLoc').value, // Deve ter esse ID no seu HTML
-    seg: document.getElementById('srcSeg').value || document.getElementById('srcNicho').value,
-    limit: document.getElementById('srcLimit').value
-  })
-});
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiChoice, loc, seg, limit })
+    });
 
     const data = await response.json();
 
-    if (!data.results || data.results.length === 0) {
-      alert("Nenhum resultado encontrado para esta busca.");
-    } else {
-      // Registra no log do Supabase (apenas para funcionários)
+    if (response.ok) {
       if (!isAdmin) {
-        for (let i = 0; i < data.results.length; i++) {
-          await sb.from('logs_buscas').insert({ user_id: currentUser.id });
-        }
+         for(let i=0; i < data.results.length; i++) {
+           await sb.from('logs_buscas').insert({ user_id: currentUser.id });
+         }
       }
-      // Mostra os resultados na tela
       renderResults(data.results);
       showToast("Busca concluída!");
+    } else {
+      alert("Erro do Servidor: " + (data.error || "Desconhecido"));
     }
+
   } catch (e) {
-    console.error(e);
-    alert('Erro na conexão com o servidor de busca.');
+    console.error("Erro completo:", e);
+    alert('Erro de conexão: Verifique se a Vercel terminou o deploy.');
   }
-  btn.disabled = false; btn.innerText = 'Buscar Prospectos';
+  btn.disabled = false; btn.innerText = 'BUSCAR PROSPECTOS';
 }
 
 function renderResults(results) {
