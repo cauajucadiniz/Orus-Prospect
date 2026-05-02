@@ -262,72 +262,56 @@ async function runSearch() {
   const isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   const hoje = new Date().toISOString().split('T')[0];
 
+  // Verificação de limite
   if (!isAdmin) {
     const { count } = await sb.from('logs_buscas').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('created_at', hoje);
-    if (count >= 25) return showToast("🚫 Limite de 25 atingido!");
+    if (count >= 25) return showToast("🚫 Limite diário atingido!");
   }
 
   const btn = document.getElementById('btnSearch');
-  const loc = document.getElementById('srcLoc').value;
-  const seg = document.getElementById('srcSeg').value || document.getElementById('srcNicho').value;
-  const limit = document.getElementById('srcLimit').value;
-  const apiChoice = document.getElementById('apiChoice').value;
-
-  if (!loc || !seg) return showToast("Preencha todos os campos!");
-
   btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> PROCESSANDO...';
+  btn.innerHTML = '<div class="spinner"></div> BUSCANDO...';
+  document.getElementById('scraperResults').innerHTML = '';
+
+  const payload = {
+    apiChoice: document.getElementById('apiChoice').value,
+    loc: document.getElementById('srcLoc').value,
+    seg: document.getElementById('srcSeg').value || document.getElementById('srcNicho').value,
+    limit: document.getElementById('srcLimit').value
+  };
 
   try {
-    let results = [];
-    if (apiChoice === 'apify') {
-        showToast("Iniciando Robô Apify...");
-        // Inicia a execução
-        const startRes = await fetch(`https://api.apify.com/v2/acts/apify~google-maps-scraper/runs?token=${APIFY_TOKEN}`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ queries: [`${seg} em ${loc}`], maxQueries: 1, limitPerQuery: parseInt(limit) })
-        });
-        const startData = await startRes.json();
-        const runId = startData.data.id;
+    // CHAMADA PARA O SUPABASE EDGE FUNCTION
+    const { data, error } = await sb.functions.invoke('search-leads', {
+      body: payload
+    });
 
-        // Monitora até acabar (Poll)
-        let finished = false;
-        while(!finished) {
-            await new Promise(r => setTimeout(r, 4000));
-            const check = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`);
-            const checkData = await check.json();
-            if (checkData.data.status === 'SUCCEEDED') {
-                const itemsRes = await fetch(`https://api.apify.com/v2/datasets/${checkData.data.defaultDatasetId}/items?token=${APIFY_TOKEN}`);
-                const items = await itemsRes.json();
-                results = items.map(i => ({ name: i.title || i.name, address: i.address || i.fullAddress, phone: i.phone || '' }));
-                finished = true;
-            } else if (checkData.data.status === 'FAILED') {
-                throw new Error("Robô falhou");
-            }
+    if (error) throw error;
+
+    if (data.results && data.results.length > 0) {
+      lastResults = data.results;
+      
+      // Registra no limite se não for admin
+      if (!isAdmin) {
+        for(let i=0; i < data.results.length; i++) {
+          await sb.from('logs_buscas').insert({ user_id: currentUser.id });
         }
+      }
+
+      renderResults(data.results);
+      showToast(`${data.results.length} leads encontrados!`);
     } else {
-        showToast("Buscando via Scrape.do...");
-        const target = encodeURIComponent(`https://www.google.com/search?q=${seg}+em+${loc}`);
-        const res = await fetch(`https://api.scrape.do/google?token=${SCRAPEDO_TOKEN}&q=${target}`);
-        const data = await res.json();
-        results = (data.organic_results || []).slice(0, limit).map(i => ({ name: i.title, address: i.snippet, phone: '' }));
+      showToast("Nenhum lead encontrado.");
     }
 
-    if (results.length > 0) {
-        lastResults = results;
-        renderResults(results);
-        if (!isAdmin) results.forEach(() => sb.from('logs_buscas').insert({ user_id: currentUser.id }).then());
-        showToast(`${results.length} leads carregados!`);
-    } else {
-        showToast("Nenhum lead encontrado.");
-    }
   } catch (e) {
-    showToast("Erro na busca.");
+    console.error(e);
+    showToast("Erro na busca: Tente novamente em instantes.");
   } finally {
-    btn.disabled = false; btn.innerHTML = "BUSCAR PROSPECTOS";
+    btn.disabled = false;
+    btn.innerHTML = 'BUSCAR PROSPECTOS';
   }
 }
-
 // --- GESTÃO CRM ---
 function renderResults(results) {
   const container = document.getElementById('scraperResults');
