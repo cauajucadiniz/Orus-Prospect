@@ -217,6 +217,11 @@ body { background: var(--black); color: var(--text); font-family: 'DM Sans', san
       <button onclick="document.getElementById('fileAvatar').click()" style="padding:10px; background:#222; border:1px solid var(--gold); color:var(--gold); border-radius:5px; font-size:10px; cursor:pointer;">MUDAR FOTO</button>
     </div>
 
+    <div style="margin-bottom: 15px; padding: 10px; background: #222; border-radius: 8px; border-left: 3px solid var(--gold);">
+  <span style="font-size: 10px; color: var(--text-muted); display: block;">CONTA LOGADA:</span>
+  <span id="displayUserEmail" style="font-size: 13px; color: #fff; font-weight: bold;">carregando...</span>
+</div>
+
     <button class="btn-gold" onclick="saveProfile()" id="btnSaveProfile">Salvar Alterações</button>
     <button class="btn-gold" style="background:none; color:#888; margin-top:10px;" onclick="closeModal()">Cancelar</button>
   </div>
@@ -251,6 +256,7 @@ async function loadProfile() {
       const img = `<img src="${data.avatar_url}">`;
       document.getElementById('userBadge').innerHTML = img;
       document.getElementById('previewAvatar').innerHTML = img;
+      document.getElementById('displayUserEmail').innerText = currentUser.email;
     }
   }
 }
