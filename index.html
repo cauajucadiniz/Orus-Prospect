@@ -226,13 +226,14 @@ async function doForgot(){
   var email = document.getElementById('forgotEmail').value.trim();
   if(!email){ showMsg('Digite seu email.', 'error'); return; }
   setLoading('forgotBtn', true);
-  var { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://orus-prospect.vercel.app/recovery.html',
+  
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://orus-prospect.vercel.app/recovery.html', // LINK OBRIGATÓRIO
   });
+
   setLoading('forgotBtn', false);
-  document.getElementById('forgotBtn').innerHTML = 'Enviar link de recuperação';
-  if(error){ showMsg('Erro ao enviar. Tente novamente.', 'error'); }
-  else { showMsg('Link enviado! Verifique seu email.', 'success'); }
+  if(error) showMsg('Erro ao enviar link.', 'error');
+  else showMsg('Link enviado! Verifique seu email.', 'success');
 }
 
 function showForgot(){
